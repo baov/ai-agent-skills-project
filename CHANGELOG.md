@@ -2,10 +2,12 @@
 
 Notable changes to this repository. Format based on [Keep a Changelog](https://keepachangelog.com/1.1.0/), versioning follows [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.1] — 2026-09-21
+## [Unreleased]
 
-No skill changed: all ten `SKILL.md` files are identical to 0.1.0. This release
-corrects the repository's own documentation and one overstated claim.
+No skill changed: all ten `SKILL.md` files are still identical to 0.1.0. What
+follows corrects the repository's own documentation and one overstated claim —
+it concerns contributors, not anyone installing the skills, which is why it
+carries no version of its own.
 
 ### Changed
 
@@ -66,5 +68,4 @@ Supporting skills, loaded by another skill:
 - `docs/glossary.md` — the binding vocabulary, mechanically enforced
 - `AGENTS.md` — the contribution conventions
 
-[0.1.1]: https://github.com/baov/proof-over-vibes/releases/tag/v0.1.1
 [0.1.0]: https://github.com/baov/proof-over-vibes/releases/tag/v0.1.0
