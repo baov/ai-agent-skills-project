@@ -93,4 +93,4 @@ python3 tools/validate-skills.py --root .
 tools/check-glossary.sh
 ```
 
-No dependency to install. The validator covers the specification's rules (name, the 1024-character cap on `description`, name/folder match) and flags any `SKILL.md` over 500 lines. The glossary check catches leftover French and off-glossary vocabulary. Both run in pre-commit (`pre-commit install`) and in CI. `--explain` describes each rule without checking anything.
+No dependency to install. The validator covers the specification's rules (name, the 1024-character cap on `description`, name/folder match) and flags any `SKILL.md` over 500 lines. The glossary check catches leftover French; the one-word-per-concept rule binds the writer and is caught in review, since its rejected synonyms are ordinary English elsewhere. Both run in pre-commit (`pre-commit install`) and in CI. `--explain` describes each rule without checking anything.

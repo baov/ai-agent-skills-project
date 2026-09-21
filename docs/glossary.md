@@ -1,73 +1,71 @@
-# Translation glossary
+# Vocabulary
 
-Frozen vocabulary for the French-to-English switch of this repository.
+One concept, one word. Ten skills only read as one system if they name the same
+thing the same way — a reader who meets "block B" here and "module B" there has
+to stop and ask whether they are the same thing.
 
-This is the only file allowed to contain French. Every term below is binding:
-a translation that uses a different English word for a listed French term is a
-defect, not a variation. The check that enforces it:
+The **Use** column is binding. The **Not** column lists the words that would
+otherwise creep in: plausible synonyms, not mistakes. Reaching for one of them
+is a defect, not a variation.
 
-```bash
-tools/check-glossary.sh
-```
+A term is listed here because it is load-bearing across several skills. A word
+used once, in one file, does not need an entry.
 
 ## Doctrine terms
 
-| French | English | Note |
+| Use | Not | Why |
 |---|---|---|
-| brique (A/B/C/D) | block | Harness building blocks |
-| QCM | multiple-choice question | Never abbreviated to MCQ |
-| métier (documentation) | business | `docs/business/`, business glossary |
-| métier (DDD context) | domain | domain logic, domain model, domain expert |
-| périmètre | scope | |
-| symptôme | symptom | |
-| gauntlet | gauntlet | Unchanged |
-| agrégat | aggregate | Standard DDD term |
-| anémique | anemic | Standard DDD term |
-| mode dégradé | degraded mode | |
-| doctrine | doctrine | Unchanged |
-| pont test-cases | test-case bridge | |
-| verdict | verdict | Unchanged |
-| cause racine | root cause | |
-| dette | debt | technical debt |
-| audit à froid | cold audit | Assumed calque, kept for brevity |
-| signalement | announcement | A skill announces itself before applying |
-| plan Mikado | Mikado plan | |
-| boucle TDD | TDD loop | |
-| déclencheur | trigger | |
-| capitaliser les leçons | capture lessons learned | |
-| skill d'appui | supporting skill | |
-| point d'entrée | entry point | |
-| micro-itérativité | micro-iteration | |
-| relecteur | reviewer | |
-| invariant | invariant | Unchanged |
-| harness | harness | Unchanged |
-| enforcement | enforcement | Unchanged |
-| doc-gardening | doc-gardening | Unchanged |
-| revue pré-merge | pre-merge review | |
-| auto-fix silencieux | silent auto-fix | |
-| axe (de revue) | angle | The four review angles, not "axis" |
-| criticite | criticality | critique/standard/faible -> critical/standard/low |
-| chantier (Mikado) | worksite | |
-| derive | drift | |
-| frontiere de test | test boundary | |
-| cadrage | framing | "scope" is reserved for perimetre |
-| bloquant / majeur / mineur | blocking / major / minor | Finding severities |
-| priorite: critique (front-matter) | priority: critical | Enum: critical / important / nice-to-have |
-| type: erreur (front-matter) | type: error | Enum: nominal / error / edge-case |
+| block (A/B/C/D) | module, brick, component | The four harness building blocks |
+| multiple-choice question | MCQ, poll, survey | Never abbreviated; "quiz" belongs to `code-assimilation-quiz` alone |
+| business | functional | The documentation side: `docs/business/`, business glossary |
+| domain | business | The DDD side: domain logic, domain model, domain expert |
+| scope | perimeter, extent, coverage | What a piece of work covers |
+| framing | scoping | The phase-0 activity, so that "scope" stays free for the noun |
+| symptom | issue, smell, problem | The eight audit symptoms |
+| gauntlet | pipeline, CI run, pre-checks | The mechanical barrier a branch clears before review |
+| degraded mode | fallback, reduced mode, safe mode | A skill works without its reference material, and says so |
+| doctrine | principles, guidelines, conventions | The rules every skill shares |
+| invariant | rule, constraint, policy | An executable check, never a written wish |
+| harness | framework, tooling, scaffolding | `tools/harness/` and what it enforces |
+| enforcement | validation, gating, policing | Making a rule mechanical |
+| doc-gardening | doc maintenance, upkeep, grooming | Block C |
+| test-case bridge | test mapping, traceability matrix | Block B |
+| verdict | decision, outcome, result | GO / NO-GO, nothing else |
+| root cause | underlying issue, real problem | It is proven, never guessed |
+| debt | cruft, legacy, mess | Technical debt |
+| cold audit | baseline audit, fresh audit | Auditing a codebase you did not write |
+| announcement | notice, heads-up, disclosure | A skill announces itself before applying |
+| Mikado plan | dependency plan, unblocking plan | |
+| worksite | workstream, chunk, batch | One unit of a Mikado plan |
+| TDD loop | red-green cycle | |
+| test boundary | test scope, seam | What a test is allowed to touch |
+| trigger | keyword, hook | What makes a `description` fire |
+| capture lessons learned | retrospective, post-mortem | `.plans/FEEDBACK.md` |
+| supporting skill | helper, sub-skill, utility skill | Loaded by another skill |
+| entry point | main skill, top-level skill | Invoked by the user |
+| micro-iteration | small steps, baby steps | |
+| reviewer | referee, checker, approver | |
+| pre-merge review | code review | "code review" stays in the triggers, since that is what users type |
+| angle | axis, dimension | The four review angles |
+| criticality | severity, importance | critical / standard / low — what a change is worth, not what a finding is worth |
+| blocking / major / minor | critical / high / low | Finding severities — deliberately different words from criticality, so the two never blur |
+| drift | divergence, rot, staleness | Documentation or tests falling out of step |
+| silent auto-fix | autofix | Always named to be forbidden |
 
-## Renamed paths
+## Front-matter contract
 
-| Before | After |
-|---|---|
-| `skills/clarify-with-qcm/` | `skills/clarify-with-choices/` |
-| `references/brique-a-invariants.md` | `references/block-a-invariants.md` |
-| `references/brique-b-pont-test-cases.md` | `references/block-b-test-case-bridge.md` |
-| `references/brique-c-doc-gardening.md` | `references/block-c-doc-gardening.md` |
-| `references/brique-d-mutation.md` | `references/block-d-mutation.md` |
-| `ddd-advisor/references/strategique.md` | `references/strategic.md` |
-| `ddd-advisor/references/tactique.md` | `references/tactical.md` |
-| `docs/metier/` (produced) | `docs/business/` |
-| `docs/technique/` (produced) | `docs/technical/` |
+These keys are written by `codebase-cartographer` and read by `codebase-harness`
+and `premerge-review`. They are a contract between skills, so they are spelled
+one way only — and changing one is a breaking change for every project already
+decorated.
+
+```yaml
+feature: cart
+type: nominal              # nominal | error | edge-case
+priority: critical         # critical | important | nice-to-have
+automated_test: tests/test_cart.py::test_add_product   # or null
+status: covered_ok         # covered_ok | covered_broken
+```
 
 ## Spelling
 
@@ -75,10 +73,7 @@ American spelling throughout: behavior, prioritize, modeling, analyze, honor.
 The skill identifier `behavior-driven-testing` settles it for the whole
 repository.
 
-## Two languages, two scopes
+## Language
 
-- **Repository language: English.** Everything versioned *here* — skill bodies,
-  descriptions, error messages, script comments and identifiers.
-- **Output language: the target project's.** Everything a skill writes
-  *elsewhere* — documentation, plans, review reports, audits, and the questions
-  it asks. A skill documenting a French codebase produces French documentation.
+Which language goes where — the repository versus what a skill writes into
+someone else's project — is defined in [AGENTS.md](../AGENTS.md), not here.

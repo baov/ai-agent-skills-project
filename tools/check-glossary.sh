@@ -4,10 +4,14 @@
 #
 # Two complementary nets:
 #   1. accented characters  — catches most French prose
-#   2. unaccented French words from docs/glossary.md — catches the rest
+#   2. unaccented French words — catches the rest
 #
-# Two files are exempt: docs/glossary.md, which must name both languages, and
-# this script, which holds the French terms it searches for.
+# Only this script is exempt, since it holds the French terms it searches for.
+# It checks what is mechanically checkable: that no French is left. The rest of
+# docs/glossary.md — one English word per concept — binds the writer, not grep:
+# its "Not" column lists ordinary English words that are perfectly valid
+# elsewhere, so matching on them would cry wolf more often than it caught
+# anything.
 set -uo pipefail
 
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -20,7 +24,7 @@ check() {
   local label="$1" pattern="$2" opts="${3:-}"
   local hits
   # shellcheck disable=SC2086 -- $opts is a deliberate word-split of grep flags.
-  hits=$(git grep -nIE $opts "$pattern" -- . ':!docs/glossary.md' ':!tools/check-glossary.sh' || true)
+  hits=$(git grep -nIE $opts "$pattern" -- . ':!tools/check-glossary.sh' || true)
   if [ -n "$hits" ]; then
     echo "FAIL — $label"
     printf '%s\n' "$hits" | sed 's/^/    /'

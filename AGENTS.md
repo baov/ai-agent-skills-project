@@ -20,7 +20,7 @@ The pre-commit hook already runs both (`pre-commit install`). What the validator
 ## Writing rules
 
 - **English.** Bodies, descriptions, error messages, script comments and identifiers.
-- **The vocabulary in [`docs/glossary.md`](docs/glossary.md) is binding.** It fixes the doctrine terms so that ten skills read as one system. Using a different English word for a listed term is a defect, not a variation — `tools/check-glossary.sh` enforces it.
+- **The vocabulary in [`docs/glossary.md`](docs/glossary.md) is binding.** It fixes one word per concept so that ten skills read as one system; using a listed synonym is a defect, not a variation. `tools/check-glossary.sh` catches the mechanical half — leftover French — and leaves the synonyms to the reviewer, since they are ordinary English words elsewhere.
 - **No hardcoded tool names.** No `mcp__*`, no named multiple-choice tool, no agent-specific path. A skill that names its tool breaks on every other agent. For multiple-choice questions, defer to `clarify-with-choices`.
 - **`AGENTS.md`, never `CLAUDE.md`.** When a skill writes to the target project's instruction file, the target is `AGENTS.md`. Claude Code compatibility comes from a one-line `CLAUDE.md` that imports `AGENTS.md`.
 - **"the agent", never a product name.** A skill's narrator is whichever agent runs it.
