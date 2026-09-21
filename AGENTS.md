@@ -34,6 +34,8 @@ The repository is English. What a skill *writes elsewhere* is not.
 - **Repository language: English.** Everything versioned here.
 - **Output language: the target project's.** Documentation, plans, review reports, audits, and the questions a skill asks — all follow the language of the project being worked on. A skill documenting a French codebase produces French documentation, and a Domain-Driven Design skill keeps that project's ubiquitous language intact.
 
+Commit messages are outside both scopes: they follow the language of whoever writes them, and nothing here constrains that.
+
 Writing the repository in English must never push English onto the projects these skills serve.
 
 ## Doctrine shared by the skills
