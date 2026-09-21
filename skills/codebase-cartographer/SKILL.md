@@ -1,6 +1,6 @@
 ---
 name: codebase-cartographer
-description: Cartographie un projet de code existant ou nouveau pour produire une documentation structurée métier + technique. Crée un dossier `docs/` organisé en `docs/metier/` (glossaire, features core, test cases — un .md par cas, groupés par feature) et `docs/technique/` (architecture, stack, stratégie de test, ADR avec analyse de l'historique git), valide chaque section avec l'utilisateur via QCM, refactorise pour éliminer les redondances, et référence le tout dans `AGENTS.md`. À utiliser DÈS QUE l'utilisateur demande de "documenter le projet", "cartographier le code", "générer la doc", "créer un glossaire métier", "documenter l'architecture", "écrire des ADR", "produire une stratégie de test", ou mentionne vouloir structurer la connaissance d'un projet — même si le mot "skill" n'est pas employé. À utiliser aussi quand l'utilisateur invoque explicitement ce skill par son nom.
+description: Cartographie un projet de code existant ou nouveau pour produire une documentation structurée métier + technique. Crée un dossier `docs/` organisé en `docs/business/` (glossaire, features core, test cases — un .md par cas, groupés par feature) et `docs/technical/` (architecture, stack, stratégie de test, ADR avec analyse de l'historique git), valide chaque section avec l'utilisateur via QCM, refactorise pour éliminer les redondances, et référence le tout dans `AGENTS.md`. À utiliser DÈS QUE l'utilisateur demande de "documenter le projet", "cartographier le code", "générer la doc", "créer un glossaire métier", "documenter l'architecture", "écrire des ADR", "produire une stratégie de test", ou mentionne vouloir structurer la connaissance d'un projet — même si le mot "skill" n'est pas employé. À utiliser aussi quand l'utilisateur invoque explicitement ce skill par son nom.
 ---
 
 # Codebase Cartographer
@@ -47,7 +47,7 @@ Avant toute question à l'utilisateur, l'agent inspecte le projet pour se faire 
 - Vérifier si `docs/` ou `AGENTS.md` existe déjà (pour éviter d'écraser bêtement)
 - Si le projet est sous git, inspecter `git log --oneline -200` et les tags pour repérer les décisions structurantes passées (utile pour la phase ADR)
 
-Si un `docs/` généré par ce skill existe déjà (présence des fichiers attendus : `docs/metier/glossary.md`, `docs/technique/architecture.md`, etc.), l'agent bascule en **mode mise à jour** — voir section dédiée plus bas. Le skill est idempotent : ré-exécuté, il met à jour intelligemment au lieu de tout regénérer.
+Si un `docs/` généré par ce skill existe déjà (présence des fichiers attendus : `docs/business/glossary.md`, `docs/technical/architecture.md`, etc.), l'agent bascule en **mode mise à jour** — voir section dédiée plus bas. Le skill est idempotent : ré-exécuté, il met à jour intelligemment au lieu de tout regénérer.
 
 Si un `docs/` existe mais ne ressemble pas à une sortie de ce skill (structure différente, fichiers inconnus), l'agent signale l'ambiguïté et demande à l'utilisateur : compléter / repartir de zéro avec backup / annuler.
 
@@ -65,13 +65,13 @@ L'ordre recommandé est métier d'abord (donne le vocabulaire) puis technique :
 
 | # | Fichier(s) | Emplacement |
 |---|------------|-------------|
-| 1 | `glossary.md` | `docs/metier/` |
-| 2 | `core-features.md` | `docs/metier/` |
-| 3 | un `.md` par test case, groupé par feature | `docs/metier/test-cases/[feature]/` |
-| 4 | `architecture.md` | `docs/technique/` |
-| 5 | `tech-stack.md` | `docs/technique/` |
-| 6 | `test-strategy.md` | `docs/technique/` |
-| 7 | `adr.md` (index) + un `.md` par ADR | `docs/technique/` + `docs/technique/adr/` |
+| 1 | `glossary.md` | `docs/business/` |
+| 2 | `core-features.md` | `docs/business/` |
+| 3 | un `.md` par test case, groupé par feature | `docs/business/test-cases/[feature]/` |
+| 4 | `architecture.md` | `docs/technical/` |
+| 5 | `tech-stack.md` | `docs/technical/` |
+| 6 | `test-strategy.md` | `docs/technical/` |
+| 7 | `adr.md` (index) + un `.md` par ADR | `docs/technical/` + `docs/technical/adr/` |
 
 ### Format du QCM
 
@@ -80,7 +80,7 @@ Pour chaque section, présenter à l'utilisateur, dans cet ordre :
 1. **Ce que j'ai compris** : un résumé bref en bullet points de ce que l'agent a inféré
 2. **Ce dont je ne suis pas sûr** : 1 à 3 questions sous forme de QCM
 
-La doctrine complète — rédaction des questions, nombre d'options, mode dégradé quand l'agent hôte n'expose pas d'outil de question à choix multiples — est dans le skill `clarify-with-qcm`. Le charger avant le premier QCM.
+La doctrine complète — rédaction des questions, nombre d'options, mode dégradé quand l'agent hôte n'expose pas d'outil de question à choix multiples — est dans le skill `clarify-with-choices`. Le charger avant le premier QCM.
 
 Si l'agent n'a aucune incertitude sur une section (rare), il propose quand même une validation simple : "Voici ce que je vais écrire dans X — je procède ?"
 
@@ -90,7 +90,7 @@ Chaque fichier suit un template spécifique. Voir `references/templates.md` pour
 
 ### Écriture du fichier
 
-Une fois le QCM répondu, l'agent écrit le fichier `.md` directement dans `docs/metier/` ou `docs/technique/`. Le contenu doit :
+Une fois le QCM répondu, l'agent écrit le fichier `.md` directement dans `docs/business/` ou `docs/technical/`. Le contenu doit :
 - Suivre le template adapté (voir `references/templates.md`)
 - Rester factuel et concis (pas de remplissage)
 - Utiliser le vocabulaire du glossaire (cohérence)
@@ -130,15 +130,15 @@ Si rien à refactorer (cas idéal), l'agent le mentionne et passe à l'étape su
 Ce projet dispose d'une documentation structurée dans `docs/`. Consulter ces fichiers avant toute modification importante.
 
 ### Métier
-- [Glossaire](docs/metier/glossary.md) — vocabulaire du domaine
-- [Features core](docs/metier/core-features.md) — fonctionnalités principales
-- [Test cases](docs/metier/test-cases/) — scénarios de test métier (un fichier par cas, groupés par feature)
+- [Glossaire](docs/business/glossary.md) — vocabulaire du domaine
+- [Features core](docs/business/core-features.md) — fonctionnalités principales
+- [Test cases](docs/business/test-cases/) — scénarios de test métier (un fichier par cas, groupés par feature)
 
 ### Technique
-- [Architecture](docs/technique/architecture.md) — vue d'ensemble et composants
-- [Stack technique](docs/technique/tech-stack.md) — technologies et outils
-- [Stratégie de test](docs/technique/test-strategy.md) — approche de testing
-- [ADR](docs/technique/adr.md) — décisions d'architecture
+- [Architecture](docs/technical/architecture.md) — vue d'ensemble et composants
+- [Stack technique](docs/technical/tech-stack.md) — technologies et outils
+- [Stratégie de test](docs/technical/test-strategy.md) — approche de testing
+- [ADR](docs/technical/adr.md) — décisions d'architecture
 ```
 
 Si `AGENTS.md` existait déjà avec d'autres sections, ajouter cette section sans toucher au reste. Si une section "Documentation" existait déjà, proposer un merge plutôt qu'un écrasement.
@@ -156,7 +156,7 @@ Une seule source de vérité, lisible par tous. Ne jamais dupliquer le contenu d
 
 ## Mode mise à jour (ré-exécution du skill)
 
-Quand le skill détecte un `docs/` déjà généré par lui (signature : présence de `docs/metier/glossary.md`, `docs/metier/core-features.md`, `docs/technique/architecture.md` au minimum), il bascule automatiquement en mode mise à jour. **C'est le comportement par défaut, pas une option** — le skill est conçu pour être ré-exécuté à chaque évolution significative du projet.
+Quand le skill détecte un `docs/` déjà généré par lui (signature : présence de `docs/business/glossary.md`, `docs/business/core-features.md`, `docs/technical/architecture.md` au minimum), il bascule automatiquement en mode mise à jour. **C'est le comportement par défaut, pas une option** — le skill est conçu pour être ré-exécuté à chaque évolution significative du projet.
 
 ### Principe
 
@@ -202,7 +202,7 @@ MODIFIÉ (1) :
   une persistance DB. Mettre à jour ?
 ```
 
-Puis un QCM pour valider l'ensemble : accepter tout / refuser tout / sélection fine (voir `clarify-with-qcm`).
+Puis un QCM pour valider l'ensemble : accepter tout / refuser tout / sélection fine (voir `clarify-with-choices`).
 
 **4. Application des changements**
 

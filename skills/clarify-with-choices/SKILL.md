@@ -1,5 +1,5 @@
 ---
-name: clarify-with-qcm
+name: clarify-with-choices
 description: Doctrine de validation par QCM — comment un skill interroge l'utilisateur avant d'écrire quoi que ce soit, et comment il dégrade quand l'agent hôte n'a pas de mécanisme de question à choix multiples. Chargé par les skills qui valident des décisions structurantes (codebase-cartographer, codebase-harness, ddd-advisor), rarement invoqué directement. À utiliser aussi quand on écrit ou révise un skill qui doit demander l'avis de l'utilisateur, ou quand on se demande combien de questions poser, sous quelle forme, ou que faire si l'utilisateur répond « à toi de voir ». Ne pas confondre avec code-assimilation-quiz, dont le QCM interroge le développeur pour qu'il apprenne, et non pour trancher une décision.
 ---
 

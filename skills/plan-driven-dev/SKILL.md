@@ -41,7 +41,7 @@ Toujours dans cet ordre :
    - Comprendre l'impact potentiel des changements
 
 4. **Couche d'enforcement, si le projet en a une**
-   - Lire la section « Harness » d'`AGENTS.md` et `docs/technique/invariants.md`
+   - Lire la section « Harness » d'`AGENTS.md` et `docs/technical/invariants.md`
    - Inventorier les scripts disponibles dans `tools/harness/` et savoir lequel couvre quoi
    - Retenir les invariants qui s'appliquent aux fichiers que la tâche va toucher — ce sont des contraintes de conception, pas des vérifications de fin de course
    - Reporter ces invariants dans la section 3 (Contexte) du plan, avec leur ID. Un plan qui ignore un invariant applicable produira du code qui échouera au gauntlet.

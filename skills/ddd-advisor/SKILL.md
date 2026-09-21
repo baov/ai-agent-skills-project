@@ -39,13 +39,13 @@ un audit complet sans accord explicite.
 Analyse à froid d'un codebase pour évaluer son alignement DDD. Toujours dans cet ordre :
 
 ### 1. Contexte préalable
-- Si `docs/metier/` et `docs/technique/` existent (sortie de `codebase-cartographer`), les lire
+- Si `docs/business/` et `docs/technical/` existent (sortie de `codebase-cartographer`), les lire
   d'abord : glossaire = candidat Langage omniprésent, ADR = décisions de frontières déjà prises.
 - Sinon, explorer le codebase : structure des dossiers, dépendances entre couches,
   noms des classes vs vocabulaire métier.
 
 ### 2. Détection des symptômes
-Lire `references/tactique.md` (section Symptômes) et `references/strategique.md`
+Lire `references/tactical.md` (section Symptômes) et `references/strategic.md`
 (section Symptômes). Pour chaque symptôme détecté, noter : localisation, gravité
 (bloquant / majeur / mineur), pattern DDD violé.
 
@@ -71,11 +71,11 @@ décroissante). L'utilisateur choisit ce qu'il veut approfondir ; détailler alo
 remédiation de l'option choisie, avec schéma cible.
 
 ### 5. Persistance (QCM final obligatoire)
-Toujours terminer par un QCM (forme et mode dégradé : voir `clarify-with-qcm`) :
+Toujours terminer par un QCM (forme et mode dégradé : voir `clarify-with-choices`) :
 - **Rien** — l'audit reste conversationnel
-- **`docs/technique/ddd-audit.md`** — rapport complet daté (créer `docs/technique/` si absent ;
+- **`docs/technical/ddd-audit.md`** — rapport complet daté (créer `docs/technical/` si absent ;
   si le dossier vient du cartographer, respecter son format et référencer le rapport dans `AGENTS.md`)
-- **ADR** — un ADR par décision structurante retenue, dans `docs/technique/adr/`
+- **ADR** — un ADR par décision structurante retenue, dans `docs/technical/adr/`
 
 ---
 
@@ -86,8 +86,8 @@ Accompagnement ponctuel d'une décision de conception. Charger la référence pe
 
 | Question type | Référence |
 |---|---|
-| Entité ou Objet-Valeur ? Où placer cette logique ? Frontière d'agrégat ? Fabrique ou constructeur ? | `references/tactique.md` |
-| Découper en contextes ? Intégrer deux systèmes ? Relation entre équipes ? Que distiller ? | `references/strategique.md` |
+| Entité ou Objet-Valeur ? Où placer cette logique ? Frontière d'agrégat ? Fabrique ou constructeur ? | `references/tactical.md` |
+| Découper en contextes ? Intégrer deux systèmes ? Relation entre équipes ? Que distiller ? | `references/strategic.md` |
 
 Règles du mode guide :
 - Répondre par une **recommandation tranchée** + sa justification par le pattern, jamais un
@@ -104,7 +104,7 @@ Règles du mode guide :
 
 ## Articulation avec l'écosystème
 
-- **codebase-cartographer** : consommer `docs/metier/glossaire.md` comme proxy du Langage
+- **codebase-cartographer** : consommer `docs/business/glossary.md` comme proxy du Langage
   omniprésent ; un écart code ↔ glossaire est un constat d'audit en soi.
 - **plan-driven-dev** : toute remédiation retenue qui implique du code multi-fichier doit être
   proposée comme tâche `plan-driven-dev` (ne pas implémenter directement depuis l'audit).

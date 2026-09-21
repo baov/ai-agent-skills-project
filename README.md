@@ -15,7 +15,7 @@ Conformes à la [spécification Agent Skills](https://agentskills.io/specificati
 | Skill | Rôle | Produit |
 |---|---|---|
 | [`codebase-cartographer`](skills/codebase-cartographer) | Cartographie un projet en doc métier + technique (glossaire, features, test-cases, ADR) | `docs/`, section dans `CLAUDE.md` |
-| [`codebase-harness`](skills/codebase-harness) | Couche d'enforcement : invariants exécutables, pont test-cases, mutation testing, doc-gardening | `tools/harness/`, `docs/technique/invariants.md` |
+| [`codebase-harness`](skills/codebase-harness) | Couche d'enforcement : invariants exécutables, pont test-cases, mutation testing, doc-gardening | `tools/harness/`, `docs/technical/invariants.md` |
 | [`plan-driven-dev`](skills/plan-driven-dev) | Workflow d'implémentation : plan validé, TDD orienté comportement, invariants dans la boucle | `.plans/` |
 | [`premerge-review`](skills/premerge-review) | Revue pré-merge : gauntlet mécanique puis quatre axes, verdict GO/NO-GO | `.reviews/` |
 | [`systematic-debugging`](skills/systematic-debugging) | Diagnostic jusqu'à la cause racine prouvée — sans correctif | — |
@@ -28,7 +28,7 @@ Conformes à la [spécification Agent Skills](https://agentskills.io/specificati
 |---|---|---|
 | [`behavior-driven-testing`](skills/behavior-driven-testing) | Doctrine de test par comportements plutôt que par classes | `plan-driven-dev`, `ai-code-remediation` |
 | [`ddd-advisor`](skills/ddd-advisor) | Audit et conseil Domain-Driven Design | `ai-code-remediation` |
-| [`clarify-with-qcm`](skills/clarify-with-qcm) | Doctrine de validation par QCM, et son mode dégradé selon l'agent hôte | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` |
+| [`clarify-with-choices`](skills/clarify-with-choices) | Doctrine de validation par QCM, et son mode dégradé selon l'agent hôte | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` |
 
 ## Comment les enchaîner
 

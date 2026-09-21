@@ -32,9 +32,9 @@ Ne pas se limiter au diff brut : pour chaque fichier modifié, lire suffisamment
 La qualité de la revue dépend de ce qu'on sait du projet. Chercher, dans cet ordre :
 
 - `AGENTS.md` — conventions du projet.
-- `docs/technique/` — architecture, ADR, stratégie de test. Les ADR sont la référence pour l'axe conformité : un changement qui contredit une décision actée est au minimum un finding majeur.
-- `docs/technique/invariants.md` et `tools/harness/` — inventorier ce qui existe (invariants documentés, scripts disponibles, seuil de mutation et sa baseline). Les invariants servent de grille de lecture pour l'axe conformité ; leur **exécution** a lieu en phase 3, pas ici.
-- `docs/metier/` — glossaire et test-cases, pour juger si le diff respecte le langage du domaine et si les comportements modifiés sont couverts.
+- `docs/technical/` — architecture, ADR, stratégie de test. Les ADR sont la référence pour l'axe conformité : un changement qui contredit une décision actée est au minimum un finding majeur.
+- `docs/technical/invariants.md` et `tools/harness/` — inventorier ce qui existe (invariants documentés, scripts disponibles, seuil de mutation et sa baseline). Les invariants servent de grille de lecture pour l'axe conformité ; leur **exécution** a lieu en phase 3, pas ici.
+- `docs/business/` — glossaire et test-cases, pour juger si le diff respecte le langage du domaine et si les comportements modifiés sont couverts.
 
 **Mode dégradé** : si tout ou partie de cette documentation est absente, poursuivre la revue sur les trois axes restants pleinement, et traiter l'axe conformité à partir des conventions observables dans le code existant (cohérence avec les patterns en place). Signaler explicitement dans le rapport ce qui n'a pas pu être vérifié faute de référentiel — l'absence de vérification n'est pas une absence de problème.
 
@@ -98,7 +98,7 @@ Parcourir le diff avec quatre lectures distinctes. Une seule passe qui "regarde 
 
 ### Ordre de lecture : le quoi avant le comment
 
-En criticité **critique**, lire d'abord les test-cases de `docs/metier/test-cases/` que le diff touche — via le champ `automated_test` du front-matter, qui pointe vers les tests modifiés. Le code ensuite.
+En criticité **critique**, lire d'abord les test-cases de `docs/business/test-cases/` que le diff touche — via le champ `automated_test` du front-matter, qui pointe vers les tests modifiés. Le code ensuite.
 
 La raison : ces fichiers décrivent le comportement attendu (contexte, action, résultat attendu), et c'est la seule couche que la revue peut valider contre le besoin réel. Le code, lui, ne peut être validé que contre ces fichiers. Les lire après avoir lu le code, c'est les lire en cherchant à confirmer ce qu'on vient de comprendre.
 
@@ -123,7 +123,7 @@ La question : *ce changement respecte-t-il les décisions actées ?*
 - Confronter chaque changement structurel aux ADR et invariants chargés en Phase 1.
 - Frontières : dépendances entre couches/modules qui violent le sens autorisé, logique métier qui fuit dans l'infrastructure ou l'UI.
 - En mode dégradé : cohérence avec les patterns dominants du codebase (un troisième style de gestion d'erreur n'est pas une amélioration).
-- **Le comportement décrit est-il le bon ?** Un test-case modifié par le diff, ou ajouté, décrit-il ce que le métier attend vraiment ? Un test-case qui décrit le mauvais comportement est un finding **bloquant** même si le code l'implémente parfaitement et que tous les tests passent — c'est la seule erreur qu'aucun check mécanique ne peut attraper. Confronter au glossaire de `docs/metier/` et signaler tout écart de vocabulaire : un test-case qui invente un terme absent du glossaire signale souvent un malentendu sur le besoin.
+- **Le comportement décrit est-il le bon ?** Un test-case modifié par le diff, ou ajouté, décrit-il ce que le métier attend vraiment ? Un test-case qui décrit le mauvais comportement est un finding **bloquant** même si le code l'implémente parfaitement et que tous les tests passent — c'est la seule erreur qu'aucun check mécanique ne peut attraper. Confronter au glossaire de `docs/business/` et signaler tout écart de vocabulaire : un test-case qui invente un terme absent du glossaire signale souvent un malentendu sur le besoin.
 
 ### Axe 4 — Dette et lisibilité
 La question : *le prochain développeur comprendra-t-il, et à quel prix ?*

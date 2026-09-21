@@ -6,9 +6,9 @@ Chargé par `codebase-harness` uniquement si cette brique a été retenue au QCM
 
 ## 4.1 — Pré-requis
 
-Le skill cherche `docs/metier/test-cases/**/*.md`. Si rien n'existe, il signale à l'utilisateur :
+Le skill cherche `docs/business/test-cases/**/*.md`. Si rien n'existe, il signale à l'utilisateur :
 
-> « Aucun test-case trouvé sous docs/metier/test-cases/. Lance d'abord `codebase-cartographer` ou crée toi-même quelques fichiers, puis reviens ici. »
+> « Aucun test-case trouvé sous docs/business/test-cases/. Lance d'abord `codebase-cartographer` ou crée toi-même quelques fichiers, puis reviens ici. »
 
 Et passe à la brique suivante (ou termine).
 
@@ -48,7 +48,7 @@ panier/ajout-produit.md :
 
 L'agent écrit `tools/harness/check_test_coverage.*` — une implémentation de référence complète et sans dépendance est fournie dans `references/harness-starters/check_test_coverage.py`. Elle ne lit que du markdown et des chemins, donc elle convient telle quelle à la plupart des projets quelle que soit leur stack ; l'adapter surtout au niveau des globs de recherche des tests. Le script :
 
-- Parcourt `docs/metier/test-cases/**/*.md`
+- Parcourt `docs/business/test-cases/**/*.md`
 - Parse chaque front-matter YAML
 - Classe en `covered_ok` / `covered_broken` / `pending` / `manual`
 - Liste les tests orphelins (existant dans le code mais sans test-case associé)

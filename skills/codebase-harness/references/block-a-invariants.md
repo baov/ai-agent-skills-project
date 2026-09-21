@@ -7,8 +7,8 @@ Chargé par `codebase-harness` uniquement si cette brique a été retenue au QCM
 ## 3.1 — Extraction des règles candidates
 
 L'agent relit (s'ils existent) :
-- `docs/technique/architecture.md` section « Contraintes structurelles »
-- Tous les ADR `docs/technique/adr/*.md` — en particulier la section « Décision »
+- `docs/technical/architecture.md` section « Contraintes structurelles »
+- Tous les ADR `docs/technical/adr/*.md` — en particulier la section « Décision »
 - `README.md` racine pour des indices de conventions (« no direct DB calls in handlers », etc.)
 
 Si la doc cartographer n'a pas tourné, l'agent demande directement à l'utilisateur :
@@ -70,7 +70,7 @@ Pour chaque règle validée, second QCM : « Sévérité ? `error` (CI bloquante
 
 Pour chaque invariant validé, l'agent produit :
 
-**a) Une entrée dans `docs/technique/invariants.md`** suivant le template (voir `references/templates.md` section 1) :
+**a) Une entrée dans `docs/technical/invariants.md`** suivant le template (voir `references/templates.md` section 1) :
 - ID `INV-NNN` (numérotation immuable, jamais re-numérotée)
 - Statut `actif`
 - Énoncé, source, lien vers le script, sévérité, remédiation actionnable, exemple de violation et de correctif

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Brique B — pont test-cases <-> tests reels.
 
-Verifie que chaque scenario documente sous docs/metier/test-cases/ pointe vers un
+Verifie que chaque scenario documente sous docs/business/test-cases/ pointe vers un
 test automatise qui existe reellement, et signale les tests sans test-case.
 
 Contrat harness (voir references/templates.md section 6) :
@@ -26,7 +26,7 @@ from pathlib import Path
 
 INVARIANT_ID = "INV-002"
 
-TEST_CASES_DIR = Path("docs/metier/test-cases")
+TEST_CASES_DIR = Path("docs/business/test-cases")
 
 # Ou chercher les tests reels, par ordre de frequence. Adapter au projet.
 TEST_GLOBS = (

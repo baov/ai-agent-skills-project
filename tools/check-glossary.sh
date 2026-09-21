@@ -6,7 +6,8 @@
 #   1. accented characters  — catches most French prose
 #   2. unaccented French words from docs/glossary.md — catches the rest
 #
-# docs/glossary.md is exempt: it is the one file that must name both languages.
+# Two files are exempt: docs/glossary.md, which must name both languages, and
+# this script, which holds the French terms it searches for.
 set -uo pipefail
 
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +19,7 @@ failures=0
 check() {
   local label="$1" pattern="$2"
   local hits
-  hits=$(git grep -nIE "$pattern" -- . ':!docs/glossary.md' || true)
+  hits=$(git grep -nIE "$pattern" -- . ':!docs/glossary.md' ':!tools/check-glossary.sh' || true)
   if [ -n "$hits" ]; then
     echo "FAIL — $label"
     printf '%s\n' "$hits" | sed 's/^/    /'

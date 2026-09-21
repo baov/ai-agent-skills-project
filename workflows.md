@@ -8,8 +8,8 @@ Neuf skills, deux familles, et une règle : les artefacts circulent, les skills 
 
 | Skill | Déclencheur | Produit |
 |---|---|---|
-| `codebase-cartographer` | « documente le projet » | `docs/metier/`, `docs/technique/`, section dans `AGENTS.md` |
-| `codebase-harness` | « mets en place les garde-fous » | `tools/harness/`, `docs/technique/invariants.md` |
+| `codebase-cartographer` | « documente le projet » | `docs/business/`, `docs/technical/`, section dans `AGENTS.md` |
+| `codebase-harness` | « mets en place les garde-fous » | `tools/harness/`, `docs/technical/invariants.md` |
 | `ai-code-remediation` | « audite ce codebase » | `.audit/<projet>-<date>.md` + plan de remédiation |
 | `systematic-debugging` | « pourquoi ça plante » | Cause racine prouvée (pas de fichier) |
 | `plan-driven-dev` | « implémente », « corrige » | `.plans/done/<slug>.md`, `.plans/FEEDBACK.md` |
@@ -22,7 +22,7 @@ Neuf skills, deux familles, et une règle : les artefacts circulent, les skills 
 |---|---|---|
 | `behavior-driven-testing` | `plan-driven-dev` (étapes 5-6), `ai-code-remediation` (S3) | Doctrine de test |
 | `ddd-advisor` | `ai-code-remediation` (quand S8 domine) | Qualification de conception |
-| `clarify-with-qcm` | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` | Forme des QCM de validation, et mode dégradé si l'agent hôte n'a pas d'outil de question |
+| `clarify-with-choices` | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` | Forme des QCM de validation, et mode dégradé si l'agent hôte n'a pas d'outil de question |
 
 ---
 
@@ -123,10 +123,10 @@ C'est ce tableau qui fait la cohérence de l'ensemble : chaque fichier produit p
 
 | Artefact | Écrit par | Lu par |
 |---|---|---|
-| `docs/metier/glossary.md` | cartographer | premerge-review (axe 3), ddd-advisor |
-| `docs/metier/test-cases/**` | cartographer | harness (B décore), premerge-review (phase 4) |
-| `docs/technique/adr/**` | cartographer | harness (A extrait), premerge-review (axe 3) |
-| `docs/technique/invariants.md` | harness | plan-driven-dev (étape 1), premerge-review (phase 1) |
+| `docs/business/glossary.md` | cartographer | premerge-review (axe 3), ddd-advisor |
+| `docs/business/test-cases/**` | cartographer | harness (B décore), premerge-review (phase 4) |
+| `docs/technical/adr/**` | cartographer | harness (A extrait), premerge-review (axe 3) |
+| `docs/technical/invariants.md` | harness | plan-driven-dev (étape 1), premerge-review (phase 1) |
 | `tools/harness/*` | harness | plan-driven-dev (étape 5), premerge-review (phase 3) |
 | `.plans/FEEDBACK.md` | plan-driven-dev | plan-driven-dev (étape 1, tâches suivantes) |
 | `.reviews/<branche>.md` | premerge-review | plan-driven-dev (entrée du correctif) |

@@ -1,6 +1,6 @@
 ---
 name: codebase-harness
-description: Couche d'enforcement déterministe pour qu'un codebase reste cohérent quand des agents IA y contribuent. Quatre briques optionnelles proposées via QCM : (A) invariants exécutables — ADR, règles d'architecture et seuils de forme (taille, complexité) transformés en linters custom pre-commit/CI ; (B) pont test-cases ↔ tests réels — front-matter YAML + script de couverture ; (D) mutation testing — vérifie que les tests non relus attraperaient réellement un bug ; outil détecté selon la stack, périmètre calibré par criticité ; (C) doc-gardening — tâche planifiée (CI ou ordonnanceur de l'hôte) qui signale les dérives. Artefacts dans `tools/harness/` et `docs/technique/invariants.md`. À utiliser quand l'utilisateur veut un "harness pour agents", "rendre les ADR exécutables", des "linters custom", de l'"architecture enforcement" (ArchUnit, dependency-cruiser), du "mutation testing", ou dit que "ses tests ne testent rien". Marche mieux après `codebase-cartographer`, tourne aussi en mode dégradé.
+description: Couche d'enforcement déterministe pour qu'un codebase reste cohérent quand des agents IA y contribuent. Quatre briques optionnelles proposées via QCM : (A) invariants exécutables — ADR, règles d'architecture et seuils de forme (taille, complexité) transformés en linters custom pre-commit/CI ; (B) pont test-cases ↔ tests réels — front-matter YAML + script de couverture ; (D) mutation testing — vérifie que les tests non relus attraperaient réellement un bug ; outil détecté selon la stack, périmètre calibré par criticité ; (C) doc-gardening — tâche planifiée (CI ou ordonnanceur de l'hôte) qui signale les dérives. Artefacts dans `tools/harness/` et `docs/technical/invariants.md`. À utiliser quand l'utilisateur veut un "harness pour agents", "rendre les ADR exécutables", des "linters custom", de l'"architecture enforcement" (ArchUnit, dependency-cruiser), du "mutation testing", ou dit que "ses tests ne testent rien". Marche mieux après `codebase-cartographer`, tourne aussi en mode dégradé.
 compatibility: Nécessite git et un shell. La brique C suppose en plus un ordonnanceur — CI planifiée (GitHub Actions, pipeline GitLab), tâche planifiée de l'agent hôte, ou cron.
 ---
 
@@ -26,7 +26,7 @@ Le skill propose quatre briques indépendantes. L'utilisateur peut en activer un
 
 | Brique | Produit | Source d'inspiration |
 |--------|---------|----------------------|
-| **A — Invariants exécutables** | `docs/technique/invariants.md` + linters dans `tools/harness/` + intégration pre-commit/CI | ADR, contraintes d'architecture, seuils de forme, conventions de l'équipe |
+| **A — Invariants exécutables** | `docs/technical/invariants.md` + linters dans `tools/harness/` + intégration pre-commit/CI | ADR, contraintes d'architecture, seuils de forme, conventions de l'équipe |
 | **B — Pont test-cases ↔ tests réels** | Front-matter YAML dans chaque test-case.md + `tools/harness/check_test_coverage.*` | Test-cases existants + suite de tests automatisés |
 | **D — Mutation testing** | Config de l'outil détecté + `tools/harness/run_mutation.*` + seuils par périmètre dans `invariants.md` | Suite de tests existante, périmètres critiques du domaine |
 | **C — Doc-gardening automatisé** | Tâche planifiée (cadence configurable) qui produit un rapport sans rien modifier | Doc existante + checks A, B et D |
@@ -62,11 +62,11 @@ Le skill propose quatre briques indépendantes. L'utilisateur peut en activer un
 
 Avant tout, l'agent inspecte le projet pour comprendre ce qu'il a à sa disposition. En parallèle :
 
-- `docs/technique/architecture.md` existe-t-il ? Contient-il une section « Contraintes structurelles » ?
-- `docs/technique/adr.md` et `docs/technique/adr/*.md` existent-ils ? Si oui, lire tous les ADR pour extraire les décisions structurantes.
-- `docs/metier/test-cases/**/*.md` existe-t-il ? Compter, et noter si un front-matter YAML est déjà présent.
+- `docs/technical/architecture.md` existe-t-il ? Contient-il une section « Contraintes structurelles » ?
+- `docs/technical/adr.md` et `docs/technical/adr/*.md` existent-ils ? Si oui, lire tous les ADR pour extraire les décisions structurantes.
+- `docs/business/test-cases/**/*.md` existe-t-il ? Compter, et noter si un front-matter YAML est déjà présent.
 - `tools/harness/` existe-t-il déjà ? (signature : ce skill a déjà tourné)
-- `docs/technique/invariants.md` existe-t-il ? (idem)
+- `docs/technical/invariants.md` existe-t-il ? (idem)
 - Inspecter la stack pour choisir le bon type de linter : Python (AST), JS/TS (ESLint custom ou dependency-cruiser), JVM (ArchUnit), Go (analyzer custom), Rust (clippy + custom lints), etc.
 - Repérer l'outillage de mutation déjà présent, en cherchant dans les manifestes et les configs de la stack détectée (ex. `pitest` dans `pom.xml`/`build.gradle(.kts)`, `@stryker-mutator/*` dans `package.json`, `stryker.conf.*`, `infection.json`, `setup.cfg`/`pyproject.toml` pour mutmut) ainsi que les dossiers de rapports déjà versionnés. Noter aussi le runner de tests et, si possible, la durée d'une exécution complète de la suite — c'est la donnée qui conditionne la brique D.
 - Inspecter la CI : `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, etc. pour savoir où proposer l'intégration.
@@ -99,7 +99,7 @@ B — Pont test-cases ↔ tests réels
     Ajoute un front-matter YAML à tes test-cases métier et produit un script
     qui vérifie qu'ils pointent vers des tests qui existent vraiment. Coût
     d'installation : faible. Coût de maintenance : nul. Recommandé si tu
-    as déjà des test-cases sous docs/metier/test-cases/.
+    as déjà des test-cases sous docs/business/test-cases/.
 
 D — Mutation testing
     Injecte des bugs artificiels dans le code et vérifie que tes tests les
@@ -115,7 +115,7 @@ C — Doc-gardening automatisé
     modifié sans validation. Recommandé si le projet évolue régulièrement.
 ```
 
-QCM multi-sélection (doctrine dans `clarify-with-qcm`) : « Lesquelles activer ? A / B / D / C / toutes / aucune ». Si « aucune » → fin du skill avec message « Compris, rien à faire. ».
+QCM multi-sélection (doctrine dans `clarify-with-choices`) : « Lesquelles activer ? A / B / D / C / toutes / aucune ». Si « aucune » → fin du skill avec message « Compris, rien à faire. ».
 
 L'ordre d'exécution est imposé : **A → B → D → C**. B s'appuie potentiellement sur la stack détectée à A ; D s'appuie sur B pour cibler les périmètres critiques (les test-cases marqués `priorite: critique` sont le meilleur candidat de départ) ; C s'appuie sur A, B et D pour savoir quoi monitorer.
 
@@ -131,10 +131,10 @@ A → B → D → C.
 
 | Brique | Procédure détaillée |
 |---|---|
-| A — Invariants exécutables | [`references/brique-a-invariants.md`](references/brique-a-invariants.md) |
-| B — Pont test-cases ↔ tests réels | [`references/brique-b-pont-test-cases.md`](references/brique-b-pont-test-cases.md) |
-| D — Mutation testing | [`references/brique-d-mutation.md`](references/brique-d-mutation.md) |
-| C — Doc-gardening automatisé | [`references/brique-c-doc-gardening.md`](references/brique-c-doc-gardening.md) |
+| A — Invariants exécutables | [`references/block-a-invariants.md`](references/block-a-invariants.md) |
+| B — Pont test-cases ↔ tests réels | [`references/block-b-test-case-bridge.md`](references/block-b-test-case-bridge.md) |
+| D — Mutation testing | [`references/block-d-mutation.md`](references/block-d-mutation.md) |
+| C — Doc-gardening automatisé | [`references/block-c-doc-gardening.md`](references/block-c-doc-gardening.md) |
 
 Chaque fichier suit la même structure : pré-requis et arbitrage du coût,
 production des artefacts, proposition d'intégration pre-commit/CI. Aucun n'écrit
@@ -162,7 +162,7 @@ Ce projet a une couche d'enforcement déterministe générée par le skill `code
 
 ### Invariants exécutables
 
-Les règles d'architecture sont rendues exécutables par des scripts dans `tools/harness/`. Liste complète et statuts dans [docs/technique/invariants.md](docs/technique/invariants.md).
+Les règles d'architecture sont rendues exécutables par des scripts dans `tools/harness/`. Liste complète et statuts dans [docs/technical/invariants.md](docs/technical/invariants.md).
 
 - Avant tout commit, lancer : `bash tools/harness/run_all.sh` (ou les scripts individuels)
 - Les messages d'erreur de chaque linter incluent la remédiation à appliquer — lis-les avant de chercher ailleurs
@@ -170,7 +170,7 @@ Les règles d'architecture sont rendues exécutables par des scripts dans `tools
 
 ### Pont test-cases ↔ tests réels
 
-Chaque scénario sous `docs/metier/test-cases/` porte un front-matter YAML qui pointe vers son test automatisé. Le script `tools/harness/check_test_coverage.*` vérifie la cohérence.
+Chaque scénario sous `docs/business/test-cases/` porte un front-matter YAML qui pointe vers son test automatisé. Le script `tools/harness/check_test_coverage.*` vérifie la cohérence.
 
 - Ajout d'un test-case → remplir le front-matter (champ `automated_test` ou `status: pending`)
 - Ajout d'un test → vérifier qu'il a un test-case correspondant, sinon en créer un
@@ -179,7 +179,7 @@ Chaque scénario sous `docs/metier/test-cases/` porte un front-matter YAML qui p
 
 Les tests écrits sans relecture humaine ligne à ligne sont contrôlés par mutation testing. Un test vert n'est pas une preuve : seul un mutant tué l'est.
 
-- Périmètre et seuils : voir l'invariant correspondant dans [docs/technique/invariants.md](docs/technique/invariants.md)
+- Périmètre et seuils : voir l'invariant correspondant dans [docs/technical/invariants.md](docs/technical/invariants.md)
 - Lancer localement : `bash tools/harness/run_mutation.sh --scope diff`
 - Un mutant survivant se traite en ajoutant un test qui exprime le **comportement** non protégé — jamais un test écrit pour tuer le mutant. Si le mutant ne correspond à aucun comportement qui compte, l'exclure explicitement en config avec un commentaire de justification
 - Ne jamais baisser un seuil pour faire passer la CI : c'est le signal qu'un comportement a perdu sa protection
@@ -197,7 +197,7 @@ Une tâche planifiée tourne périodiquement et signale les dérives. Quand le r
 
 ## Mode mise à jour (ré-exécution du skill)
 
-Quand le skill détecte qu'il a déjà tourné (présence de `tools/harness/` ou de `docs/technique/invariants.md`), il bascule automatiquement en mode mise à jour.
+Quand le skill détecte qu'il a déjà tourné (présence de `tools/harness/` ou de `docs/technical/invariants.md`), il bascule automatiquement en mode mise à jour.
 
 ### Inventaire
 
@@ -297,7 +297,7 @@ Si tous les checks passent et qu'il n'y a aucun delta, l'agent dit simplement «
 
 ## Référence
 
-- `references/brique-a-invariants.md`, `-b-pont-test-cases`, `-c-doc-gardening`, `-d-mutation` — la procédure détaillée de chaque brique. Ne lire que celles retenues au QCM de scoping : c'est tout l'intérêt du découpage
+- `references/block-a-invariants.md`, `-b-test-case-bridge`, `-c-doc-gardening`, `-d-mutation` — la procédure détaillée de chaque brique. Ne lire que celles retenues au QCM de scoping : c'est tout l'intérêt du découpage
 - `references/templates.md` — six sections : (1) `invariants.md` et ses règles de rédaction, (2) front-matter des test-cases, (3) entrée type d'un seuil de mutation avec baseline, (4) prompt de la tâche planifiée, (5) section Harness d'`AGENTS.md`, (6) conventions d'écriture des scripts et règle d'or des messages
 - `references/harness-starters/` — implémentations de référence. Contient `README.md` (le contrat commun à tous les scripts) et `check_test_coverage.py` (brique B, complet et générique). Volontairement dépourvu de linters par stack : le skill les génère à partir des conventions, ce qui vieillit moins vite qu'un dossier figé
-- `references/harness-starters/mutation/` — optionnel. La brique D **génère** son wrapper et sa config à partir de la stack détectée (voir `references/brique-d-mutation.md`, sections 5.3.a et 5.3.b) ; ce dossier ne sert qu'à figer des exemples déjà éprouvés en interne, jamais de source de vérité. Le contrat de sortie normalisée décrit en 5.3.b de ce fichier prime sur tout starter qui s'en écarterait.
+- `references/harness-starters/mutation/` — optionnel. La brique D **génère** son wrapper et sa config à partir de la stack détectée (voir `references/block-d-mutation.md`, sections 5.3.a et 5.3.b) ; ce dossier ne sert qu'à figer des exemples déjà éprouvés en interne, jamais de source de vérité. Le contrat de sortie normalisée décrit en 5.3.b de ce fichier prime sur tout starter qui s'en écarterait.

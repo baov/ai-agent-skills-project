@@ -6,7 +6,7 @@ Ce fichier est consulté par l'agent au moment de générer chacun des artefacts
 
 ---
 
-## 1. `docs/technique/invariants.md`
+## 1. `docs/technical/invariants.md`
 
 ### Structure du fichier
 
@@ -64,7 +64,7 @@ Lancer tous les checks : `bash tools/harness/run_all.sh`
 
 ### Structure
 
-À insérer en tête de chaque `docs/metier/test-cases/[feature]/[nom].md`, avant le titre :
+À insérer en tête de chaque `docs/business/test-cases/[feature]/[nom].md`, avant le titre :
 
 ```yaml
 ---
@@ -138,7 +138,7 @@ Le seuil de mutation est un invariant comme les autres, avec deux champs supplé
 
 ## 4. Prompt de la tâche planifiée (brique C)
 
-Ne concerne que la variante **interprétation** de la brique C (voir `brique-c-doc-gardening.md`, section 6.4), celle qui fait tourner un agent. Le rapport mécanique, lui, est un job de CI planifié et n'a pas de prompt.
+Ne concerne que la variante **interprétation** de la brique C (voir `block-c-doc-gardening.md`, section 6.4), celle qui fait tourner un agent. Le rapport mécanique, lui, est un job de CI planifié et n'a pas de prompt.
 
 ### Structure
 

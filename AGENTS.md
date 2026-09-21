@@ -19,7 +19,7 @@ Le hook pre-commit le lance déjà (`pre-commit install`). Ce que le script vér
 ## Règles d'écriture
 
 - **Langue française.** Corps, descriptions, messages d'erreur, commentaires de script.
-- **Aucun nom d'outil en dur.** Ni `mcp__*`, ni un outil de question à choix multiples, ni un chemin propre à un agent. Un skill qui nomme son outil casse chez les autres. Pour les QCM, déléguer à `clarify-with-qcm`.
+- **Aucun nom d'outil en dur.** Ni `mcp__*`, ni un outil de question à choix multiples, ni un chemin propre à un agent. Un skill qui nomme son outil casse chez les autres. Pour les QCM, déléguer à `clarify-with-choices`.
 - **`AGENTS.md`, jamais `CLAUDE.md`.** Quand un skill écrit dans le fichier d'instructions du projet cible, la cible est `AGENTS.md`. La compatibilité Claude Code passe par un `CLAUDE.md` d'une ligne qui importe `AGENTS.md`.
 - **« l'agent », jamais le nom d'un produit.** Le narrateur d'un skill est l'agent qui l'exécute, quel qu'il soit.
 - **Le corps d'un `SKILL.md` reste sous 500 lignes.** Il est chargé en entier dès que le skill s'active. Au-delà, déporter dans `references/` — un fichier par branche du workflow, pour que l'agent ne lise que ce qui le concerne.

@@ -4,7 +4,7 @@ Ce fichier est consulté par l'agent au moment de générer chacun des 7 fichier
 
 ---
 
-## 1. `docs/metier/glossary.md`
+## 1. `docs/business/glossary.md`
 
 ### Structure
 
@@ -30,7 +30,7 @@ Ordre : alphabétique. Pas plus de 3 phrases par entrée. Si une définition dem
 
 ---
 
-## 2. `docs/metier/core-features.md`
+## 2. `docs/business/core-features.md`
 
 ### Structure
 
@@ -66,7 +66,7 @@ Une feature = une capacité utilisateur, pas un endpoint technique. Si l'agent h
 
 ---
 
-## 3. `docs/metier/test-cases/[feature]/[nom].md` (un fichier par test case)
+## 3. `docs/business/test-cases/[feature]/[nom].md` (un fichier par test case)
 
 ### Sources à parcourir
 
@@ -83,7 +83,7 @@ L'agent consolide la liste, dédoublonne, et présente un récapitulatif à l'ut
 Un fichier `.md` par test case, groupé par feature dans un sous-dossier :
 
 ```
-docs/metier/test-cases/
+docs/business/test-cases/
 ├── authentification/
 │   ├── connexion-reussie.md
 │   ├── connexion-mot-de-passe-invalide.md
@@ -129,7 +129,7 @@ Ce qui doit se produire. État final du système, retour côté utilisateur, eff
 
 ---
 
-## 4. `docs/technique/architecture.md`
+## 4. `docs/technical/architecture.md`
 
 ### Structure
 
@@ -169,7 +169,7 @@ Pas de copier-coller de tech-stack.md ici. Mentionner les techs UNIQUEMENT quand
 
 ---
 
-## 5. `docs/technique/tech-stack.md`
+## 5. `docs/technical/tech-stack.md`
 
 ### Structure
 
@@ -206,7 +206,7 @@ Versions importantes uniquement (langage, framework majeur, DB). Pas la peine de
 
 ---
 
-## 6. `docs/technique/test-strategy.md`
+## 6. `docs/technical/test-strategy.md`
 
 ### Structure
 
@@ -241,7 +241,7 @@ Décrire le type de pyramide utilisée (classique, trophée, ice-cream, etc.) et
 
 ---
 
-## 7. `docs/technique/adr.md` + `docs/technique/adr/`
+## 7. `docs/technical/adr.md` + `docs/technical/adr/`
 
 ### Sources à parcourir AVANT le QCM
 
@@ -320,4 +320,4 @@ Ce qui a été décidé, en une à trois phrases claires.
 
 ## Notes générales sur la phase QCM
 
-La doctrine de validation par QCM — mécanisme selon l'agent hôte, structure d'un round, rédaction des questions, cas particuliers — vit dans le skill `clarify-with-qcm`. Les templates ci-dessus fixent *ce qu'on demande* ; `clarify-with-qcm` fixe *comment on le demande*.
+La doctrine de validation par QCM — mécanisme selon l'agent hôte, structure d'un round, rédaction des questions, cas particuliers — vit dans le skill `clarify-with-choices`. Les templates ci-dessus fixent *ce qu'on demande* ; `clarify-with-choices` fixe *comment on le demande*.

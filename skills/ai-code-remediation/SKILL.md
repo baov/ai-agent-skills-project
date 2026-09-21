@@ -21,7 +21,7 @@ Toute la remédiation obéit à trois disciplines, non négociables :
 
 1. Établir le périmètre : tout le repo, ou un sous-ensemble (module, service) ? Sur un gros codebase (>~50k lignes), proposer de découper l'audit par zone plutôt que de tout survoler.
 2. Recueillir le contexte minimal auprès de l'utilisateur : quelle proportion du code est générée, depuis quand, quels sont les irritants déjà ressentis (bugs récurrents, peur de toucher certaines zones, builds lents) ? Les irritants vécus orientent la priorisation finale.
-3. Inventorier les référentiels disponibles : `AGENTS.md`, `docs/technique/` (ADR, architecture), `docs/metier/` (glossaire, test-cases), `docs/technique/invariants.md` et `tools/harness/`. **Mode dégradé** : leur absence n'empêche pas l'audit, mais elle est elle-même un finding — un codebase généré sans référentiel dérive plus vite.
+3. Inventorier les référentiels disponibles : `AGENTS.md`, `docs/technical/` (ADR, architecture), `docs/business/` (glossaire, test-cases), `docs/technical/invariants.md` et `tools/harness/`. **Mode dégradé** : leur absence n'empêche pas l'audit, mais elle est elle-même un finding — un codebase généré sans référentiel dérive plus vite.
 
 ## Phase 1 — Collecte des signaux
 

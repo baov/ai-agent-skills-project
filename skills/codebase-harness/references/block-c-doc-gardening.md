@@ -19,7 +19,7 @@ La première partie tourne partout. La seconde suppose que l'hôte sache planifi
 
 ## 6.1 — Cadence
 
-L'agent propose les cadences via QCM (voir `clarify-with-qcm`) :
+L'agent propose les cadences via QCM (voir `clarify-with-choices`) :
 
 | Cadence | Cron | Cas d'usage |
 |---------|------|-------------|
