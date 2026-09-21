@@ -71,10 +71,10 @@ décroissante). L'utilisateur choisit ce qu'il veut approfondir ; détailler alo
 remédiation de l'option choisie, avec schéma cible.
 
 ### 5. Persistance (QCM final obligatoire)
-Toujours terminer par un QCM :
+Toujours terminer par un QCM (forme et mode dégradé : voir `clarify-with-qcm`) :
 - **Rien** — l'audit reste conversationnel
 - **`docs/technique/ddd-audit.md`** — rapport complet daté (créer `docs/technique/` si absent ;
-  si le dossier vient du cartographer, respecter son format et référencer le rapport dans `CLAUDE.md`)
+  si le dossier vient du cartographer, respecter son format et référencer le rapport dans `AGENTS.md`)
 - **ADR** — un ADR par décision structurante retenue, dans `docs/technique/adr/`
 
 ---

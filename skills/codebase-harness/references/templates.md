@@ -1,8 +1,8 @@
 # Templates des artefacts du harness
 
-Ce fichier est consulté par Claude au moment de générer chacun des artefacts du harness. Il contient pour chaque artefact : (1) la structure attendue, (2) les questions QCM types à poser en phase de validation.
+Ce fichier est consulté par l'agent au moment de générer chacun des artefacts du harness. Il contient pour chaque artefact : (1) la structure attendue, (2) les questions QCM types à poser en phase de validation.
 
-**Règle de fond** : ces templates fixent la *forme*, jamais le contenu métier. Un invariant, un seuil ou un périmètre est toujours une décision de l'utilisateur, validée par QCM. Claude propose, l'utilisateur tranche.
+**Règle de fond** : ces templates fixent la *forme*, jamais le contenu métier. Un invariant, un seuil ou un périmètre est toujours une décision de l'utilisateur, validée par QCM. L'agent propose, l'utilisateur tranche.
 
 ---
 
@@ -136,16 +136,28 @@ Le seuil de mutation est un invariant comme les autres, avec deux champs supplé
 
 ---
 
-## 4. Prompt de la scheduled-task (brique C)
+## 4. Prompt de la tâche planifiée (brique C)
+
+Ne concerne que la variante **interprétation** de la brique C (voir `brique-c-doc-gardening.md`, section 6.4), celle qui fait tourner un agent. Le rapport mécanique, lui, est un job de CI planifié et n'a pas de prompt.
 
 ### Structure
 
-```json
-{
-  "name": "Harness — doc-gardening [nom du projet]",
-  "cronExpression": "<choisi via QCM>",
-  "prompt": "Relance le skill codebase-harness en mode mise à jour sur le projet [chemin]. Ne modifie aucun fichier automatiquement — produis uniquement un rapport consolidé : violations d'invariants nouvelles, invariants obsolètes, test-cases dérivés (covered_broken ou nouveau test sans test-case), régression du score de mutation par rapport à la baseline et mutants survivants nouveaux, doc qui aurait dérivé. Si tout est au vert, dis-le et n'envoie rien d'autre."
-}
+Trois éléments, quel que soit l'ordonnanceur de l'hôte — les noms de champs, eux, varient :
+
+| Élément | Valeur |
+|---|---|
+| Intitulé | `Harness — doc-gardening [nom du projet]` |
+| Cadence | expression cron choisie via QCM |
+| Prompt | celui ci-dessous, tel quel |
+
+```
+Relance le skill codebase-harness en mode mise à jour sur le projet [chemin].
+Ne modifie aucun fichier automatiquement — produis uniquement un rapport
+consolidé : violations d'invariants nouvelles, invariants obsolètes,
+test-cases dérivés (covered_broken ou nouveau test sans test-case),
+régression du score de mutation par rapport à la baseline et mutants
+survivants nouveaux, doc qui aurait dérivé. Si tout est au vert, dis-le et
+n'envoie rien d'autre.
 ```
 
 ### Règles de rédaction
@@ -161,7 +173,7 @@ Le seuil de mutation est un invariant comme les autres, avec deux champs supplé
 
 ---
 
-## 5. Section « Harness » de `CLAUDE.md`
+## 5. Section « Harness » d'`AGENTS.md`
 
 La structure complète est dans le SKILL.md, étape 7. Deux règles de rédaction s'appliquent :
 
@@ -170,14 +182,14 @@ La structure complète est dans le SKILL.md, étape 7. Deux règles de rédactio
 
 ### Questions QCM types
 
-- « J'ajoute la section Harness à CLAUDE.md ? Voici le contenu proposé. »
-- « CLAUDE.md a déjà une section Harness qui mentionne la brique X, désactivée depuis. Je la retire ? »
+- « J'ajoute la section Harness à AGENTS.md ? Voici le contenu proposé. »
+- « AGENTS.md a déjà une section Harness qui mentionne la brique X, désactivée depuis. Je la retire ? »
 
 ---
 
 ## 6. Conventions d'écriture des scripts
 
-Tous les scripts produits dans `tools/harness/` respectent le même contrat, quelle que soit la brique et quel que soit le langage. C'est ce contrat qui permet au mode mise à jour et à la scheduled-task de les agréger sans les connaître individuellement.
+Tous les scripts produits dans `tools/harness/` respectent le même contrat, quelle que soit la brique et quel que soit le langage. C'est ce contrat qui permet au mode mise à jour et à la tâche planifiée de les agréger sans les connaître individuellement.
 
 ### Interface
 

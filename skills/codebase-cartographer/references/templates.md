@@ -1,6 +1,6 @@
 # Templates des fichiers de documentation
 
-Ce fichier est consulté par Claude au moment de générer chacun des 7 fichiers. Il contient pour chaque fichier : (1) la structure attendue, (2) des questions QCM types à poser à l'utilisateur en phase de validation.
+Ce fichier est consulté par l'agent au moment de générer chacun des 7 fichiers. Il contient pour chaque fichier : (1) la structure attendue, (2) des questions QCM types à poser à l'utilisateur en phase de validation.
 
 ---
 
@@ -56,7 +56,7 @@ Fonctionnalités principales du produit, du point de vue utilisateur.
 ...
 ```
 
-Une feature = une capacité utilisateur, pas un endpoint technique. Si Claude hésite, c'est probablement de l'architecture, pas une feature.
+Une feature = une capacité utilisateur, pas un endpoint technique. Si l'agent hésite, c'est probablement de l'architecture, pas une feature.
 
 ### Questions QCM types
 
@@ -70,13 +70,13 @@ Une feature = une capacité utilisateur, pas un endpoint technique. Si Claude h�
 
 ### Sources à parcourir
 
-Pour identifier les test cases candidats, Claude inspecte dans cet ordre :
+Pour identifier les test cases candidats, l'agent inspecte dans cet ordre :
 
 1. **Tests existants dans le code** : fichiers `*_test.*`, `*.spec.*`, dossier `tests/`, `__tests__/`, `spec/`, etc. Chaque test unitaire ou d'intégration métier devient un candidat.
 2. **Controllers / endpoints / handlers** : routes HTTP, handlers d'événements, commandes CLI. Chaque endpoint suggère au moins un cas nominal + cas d'erreur.
 3. **Features métier déjà documentées** dans `core-features.md` : pour chaque feature, déduire les scénarios principaux non couverts par les deux sources précédentes.
 
-Claude consolide la liste, dédoublonne, et présente un récapitulatif à l'utilisateur en QCM AVANT d'écrire les fichiers.
+L'agent consolide la liste, dédoublonne, et présente un récapitulatif à l'utilisateur en QCM AVANT d'écrire les fichiers.
 
 ### Organisation
 
@@ -245,7 +245,7 @@ Décrire le type de pyramide utilisée (classique, trophée, ice-cream, etc.) et
 
 ### Sources à parcourir AVANT le QCM
 
-Pour proposer des ADR candidats, Claude analyse :
+Pour proposer des ADR candidats, l'agent analyse :
 
 1. **Le code** : choix techniques structurants détectables (framework choisi, pattern d'architecture, choix de DB, approche d'authentification, gestion d'état, stratégie de cache, etc.)
 2. **L'historique git** (si disponible) :
@@ -255,7 +255,7 @@ Pour proposer des ADR candidats, Claude analyse :
    - Fichiers supprimés ou renommés en masse (signal de refactor structurant)
 3. **Les fichiers de configuration** : `package.json` (deps majeures retirées/ajoutées), `Dockerfile` (base image switchée), config CI/CD (changements de pipeline)
 
-Claude consolide une liste de **décisions candidates** (5-15 entrées max), avec pour chacune :
+L'agent consolide une liste de **décisions candidates** (5-15 entrées max), avec pour chacune :
 - Le nom court de la décision
 - L'indice qui l'a fait remonter (commit, code, etc.)
 - Le niveau d'évidence (claire / probable / hypothétique)
@@ -320,8 +320,4 @@ Ce qui a été décidé, en une à trois phrases claires.
 
 ## Notes générales sur la phase QCM
 
-- Toujours utiliser le tool `ask_user_input_v0` pour les QCM (interface tappable, plus facile que de taper sur mobile)
-- Max 3 questions par round
-- Options courtes (2-6 mots)
-- Toujours inclure une option "autre" ou "à préciser" quand pertinent
-- Si l'utilisateur répond "à toi de voir" / "conseille-moi" : faire un choix par défaut raisonnable, l'annoncer, et passer à la suite sans re-questionner
+La doctrine de validation par QCM — mécanisme selon l'agent hôte, structure d'un round, rédaction des questions, cas particuliers — vit dans le skill `clarify-with-qcm`. Les templates ci-dessus fixent *ce qu'on demande* ; `clarify-with-qcm` fixe *comment on le demande*.

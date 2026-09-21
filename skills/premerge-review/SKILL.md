@@ -31,7 +31,7 @@ Ne pas se limiter au diff brut : pour chaque fichier modifié, lire suffisamment
 
 La qualité de la revue dépend de ce qu'on sait du projet. Chercher, dans cet ordre :
 
-- `CLAUDE.md` — conventions du projet.
+- `AGENTS.md` — conventions du projet.
 - `docs/technique/` — architecture, ADR, stratégie de test. Les ADR sont la référence pour l'axe conformité : un changement qui contredit une décision actée est au minimum un finding majeur.
 - `docs/technique/invariants.md` et `tools/harness/` — inventorier ce qui existe (invariants documentés, scripts disponibles, seuil de mutation et sa baseline). Les invariants servent de grille de lecture pour l'axe conformité ; leur **exécution** a lieu en phase 3, pas ici.
 - `docs/metier/` — glossaire et test-cases, pour juger si le diff respecte le langage du domaine et si les comportements modifiés sont couverts.

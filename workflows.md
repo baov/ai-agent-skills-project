@@ -8,7 +8,7 @@ Neuf skills, deux familles, et une règle : les artefacts circulent, les skills 
 
 | Skill | Déclencheur | Produit |
 |---|---|---|
-| `codebase-cartographer` | « documente le projet » | `docs/metier/`, `docs/technique/`, section dans `CLAUDE.md` |
+| `codebase-cartographer` | « documente le projet » | `docs/metier/`, `docs/technique/`, section dans `AGENTS.md` |
 | `codebase-harness` | « mets en place les garde-fous » | `tools/harness/`, `docs/technique/invariants.md` |
 | `ai-code-remediation` | « audite ce codebase » | `.audit/<projet>-<date>.md` + plan de remédiation |
 | `systematic-debugging` | « pourquoi ça plante » | Cause racine prouvée (pas de fichier) |
@@ -22,6 +22,7 @@ Neuf skills, deux familles, et une règle : les artefacts circulent, les skills 
 |---|---|---|
 | `behavior-driven-testing` | `plan-driven-dev` (étapes 5-6), `ai-code-remediation` (S3) | Doctrine de test |
 | `ddd-advisor` | `ai-code-remediation` (quand S8 domine) | Qualification de conception |
+| `clarify-with-qcm` | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` | Forme des QCM de validation, et mode dégradé si l'agent hôte n'a pas d'outil de question |
 
 ---
 
@@ -142,7 +143,7 @@ C'est ce tableau qui fait la cohérence de l'ensemble : chaque fichier produit p
 | `premerge-review` pour apprendre le code | C'est `code-assimilation-quiz`. La revue cherche des défauts, pas à enseigner. |
 | `premerge-review` sur un codebase entier | C'est `ai-code-remediation`. La revue travaille sur un diff. |
 | `ai-code-remediation` sur une branche | Inverse du précédent. |
-| `codebase-harness` avant `codebase-cartographer` | Marche, mais Claude devra poser à la main toutes les questions d'architecture. |
+| `codebase-harness` avant `codebase-cartographer` | Marche, mais l'agent devra poser à la main toutes les questions d'architecture. |
 | Corriger pendant `systematic-debugging` | Le skill s'arrête à la cause prouvée, par construction. |
 | `code-assimilation-quiz` déclenché tout seul | Interdit : uniquement sur demande explicite. |
 | Mutation testing dans la boucle TDD | Trop lent. Sa place est au gauntlet et en CI. |

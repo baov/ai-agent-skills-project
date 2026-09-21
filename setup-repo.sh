@@ -9,7 +9,8 @@
 #
 set -euo pipefail
 
-REPO_NAME="${1:-claude-skills}"
+# Par défaut, le nom du dossier courant.
+REPO_NAME="${1:-$(basename "$PWD")}"
 
 # --- vérifications --------------------------------------------------------
 command -v git >/dev/null || { echo "git introuvable."; exit 1; }
@@ -48,14 +49,14 @@ if [ ! -d .git ]; then
 fi
 
 git add .
-git diff --cached --quiet || git commit -q -m "Skills Claude pour le développement logiciel"
+git diff --cached --quiet || git commit -q -m "Skills de développement logiciel pour agents IA"
 
 # --- création + push ------------------------------------------------------
 gh repo create "$REPO_NAME" \
   --private \
   --source=. \
   --remote=origin \
-  --description "Skills Claude — workflow de développement, enforcement, revue" \
+  --description "Proof Over Vibes — agent skills : documentation, enforcement, revue" \
   --push
 
 echo

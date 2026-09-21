@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Python — le validateur et les scripts de référence
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Outils
+.pre-commit-cache/
+
+# Archives produites pour le téléversement web (voir README, section Installation)
+*.zip

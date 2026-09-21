@@ -1,0 +1,14 @@
+# Validation des skills contre la spécification Agent Skills.
+# Un check non exécuté n'est pas un check : cette règle s'applique au dépôt
+# qui l'énonce.
+#
+# Installation : pip install pre-commit && pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: validate-skills
+        name: skills conformes à la spec Agent Skills
+        entry: python3 tools/validate-skills.py --root .
+        language: system
+        pass_filenames: false
+        files: ^skills/.*\.md$

@@ -1,0 +1,29 @@
+name: validate-skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  spec:
+    name: Conformité à la spécification Agent Skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      # Le script n'a aucune dépendance : pas d'étape d'installation.
+      - name: Règles appliquées
+        run: python3 tools/validate-skills.py --explain
+      # Code 1 = violation `error`, bloquante. Code 2 = uniquement des `warn`,
+      # signalés sans bloquer : le harness informe, il ne met pas de porte.
+      - name: Validation
+        run: |
+          python3 tools/validate-skills.py --root . || status=$?
+          if [ "${status:-0}" = "2" ]; then
+            echo "::warning::Des recommandations du spec ne sont pas respectées (voir ci-dessus)."
+            exit 0
+          fi
+          exit "${status:-0}"
