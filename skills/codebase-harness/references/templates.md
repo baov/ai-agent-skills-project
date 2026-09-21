@@ -1,225 +1,226 @@
-# Templates des artefacts du harness
+# Harness artifact templates
 
-Ce fichier est consulté par l'agent au moment de générer chacun des artefacts du harness. Il contient pour chaque artefact : (1) la structure attendue, (2) les questions QCM types à poser en phase de validation.
+The agent consults this file when it generates each of the harness artifacts. For every artifact it holds: (1) the expected structure, (2) the typical multiple-choice questions to ask during the approval phase.
 
-**Règle de fond** : ces templates fixent la *forme*, jamais le contenu métier. Un invariant, un seuil ou un périmètre est toujours une décision de l'utilisateur, validée par QCM. L'agent propose, l'utilisateur tranche.
+**Underlying rule**: these templates fix the *form*, never the business content. An invariant, a threshold or a scope is always a user decision, approved through a multiple-choice question. The agent proposes, the user decides.
 
 ---
 
 ## 1. `docs/technical/invariants.md`
 
-### Structure du fichier
+### File structure
 
 ```markdown
-# Invariants exécutables
+# Executable invariants
 
-Règles d'architecture et de forme rendues vérifiables mécaniquement. Chaque invariant a un ID immuable, un script qui le vérifie, et une remédiation actionnable.
+Architecture and shape rules made mechanically verifiable. Every invariant has an immutable ID, a script that checks it, and an actionable remediation.
 
-Lancer tous les checks : `bash tools/harness/run_all.sh`
+Run every check: `bash tools/harness/run_all.sh`
 
-| ID | Énoncé | Sévérité | Statut |
+| ID | Statement | Severity | Status |
 |----|--------|----------|--------|
-| INV-001 | … | error | actif |
-| INV-002 | … | warn | actif |
-| INV-003 | … | — | déprécié |
+| INV-001 | … | error | active |
+| INV-002 | … | warn | active |
+| INV-003 | … | — | deprecated |
 
 ---
 
-## INV-001 — [Titre court]
+## INV-001 — [Short title]
 
-- **Statut** : actif | déprécié
-- **Énoncé** : la règle en une phrase, au présent, formulée comme une propriété vraie du codebase
-- **Source** : ADR-NNNN | architecture.md § Contraintes structurelles | convention équipe (énoncé utilisateur)
-- **Script** : `tools/harness/check_<sujet>.<ext>`
-- **Sévérité** : error | warn
-- **Remédiation** : ce que doit faire concrètement celui qui viole la règle
-- **Exemple de violation** :
+- **Status**: active | deprecated
+- **Statement**: the rule in one sentence, in the present tense, phrased as a property that holds true of the codebase
+- **Source**: ADR-NNNN | architecture.md § Structural constraints | team convention (stated by the user)
+- **Script**: `tools/harness/check_<subject>.<ext>`
+- **Severity**: error | warn
+- **Remediation**: what whoever breaks the rule has to do, concretely
+- **Example violation**:
   ```
-  <extrait minimal>
+  <minimal excerpt>
   ```
-- **Correctif** :
+- **Fix**:
   ```
-  <le même extrait, corrigé>
+  <the same excerpt, corrected>
   ```
 ```
 
-### Règles de rédaction
+### Writing rules
 
-- **La numérotation est immuable.** Un invariant déprécié garde son ID ; on ne renumérote jamais. Un nouvel invariant prend le numéro suivant, même si des trous existent.
-- **Un invariant = une règle.** Si l'énoncé contient « et » ou « sauf si », c'est deux invariants ou une règle mal posée.
-- **L'énoncé décrit l'état voulu, pas l'interdit.** « La couche domaine ne dépend d'aucun module d'I/O » plutôt que « ne pas importer requests ».
-- **La remédiation est une instruction, pas un constat.** Elle doit suffire à un agent qui n'a pas lu l'ADR.
-- Les blocs exemple/correctif sont obligatoires : c'est ce qui rend la règle compréhensible sans contexte.
+- **Numbering is immutable.** A deprecated invariant keeps its ID; nothing is ever renumbered. A new invariant takes the next number, even if gaps exist.
+- **One invariant = one rule.** If the statement contains "and" or "unless", it is either two invariants or a badly framed rule.
+- **The statement describes the wanted state, not the ban.** "The domain layer depends on no I/O module" rather than "do not import requests".
+- **The remediation is an instruction, not an observation.** It has to be enough for an agent that never read the ADR.
+- The example/fix blocks are mandatory: they are what makes the rule understandable without context.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- « J'ai extrait N règles candidates : [liste]. Lesquelles rendre exécutables ? »
-- « INV-00X : sévérité `error` (CI bloquante) ou `warn` (signal seulement) ? »
-- « Cette règle vient d'ADR-NNNN — j'ajoute le renvoi « Invariants exécutables associés » dans l'ADR ? »
-- « L'invariant INV-00X ne trouve plus la couche qu'il surveille. Le passer en `déprécié` ? »
+- "I extracted N candidate rules: [list]. Which ones should be made executable?"
+- "INV-00X: severity `error` (blocking CI) or `warn` (signal only)?"
+- "This rule comes from ADR-NNNN — should I add the 'Related executable invariants' cross-reference to the ADR?"
+- "Invariant INV-00X no longer finds the layer it watches. Switch it to `deprecated`?"
 
 ---
 
-## 2. Front-matter des test-cases (brique B)
+## 2. Test-case front-matter (block B)
 
 ### Structure
 
-À insérer en tête de chaque `docs/business/test-cases/[feature]/[nom].md`, avant le titre :
+To be inserted at the top of every `docs/business/test-cases/[feature]/[name].md`, before the title:
 
 ```yaml
 ---
 feature: panier
-type: nominal              # nominal | erreur | edge-case
-priorite: critique         # critique | importante | nice-to-have
-automated_test: tests/test_panier.py::test_ajout_produit   # ou null
+type: nominal              # nominal | error | edge-case
+priority: critical         # critical | important | nice-to-have
+automated_test: tests/test_cart.py::test_add_product   # or null
 status: covered            # covered | pending | manual
 ---
 ```
 
-### Sémantique des champs
+### Field semantics
 
-| Champ | Rôle | Déduction automatique |
+| Field | Role | Automatic inference |
 |-------|------|------------------------|
-| `feature` | Regroupement, doit correspondre au dossier parent | Nom du dossier |
-| `type` | Nature du scénario | Déduit du titre et du contenu |
-| `priorite` | **Alimente le périmètre de la brique D** — les `critique` sont les candidats naturels au mutation testing | Déduit, à valider |
-| `automated_test` | Référence `<chemin>::<nom du test>` | Recherche par nom, heuristique snake_case |
-| `status` | État de la couverture | `covered` si un test a été trouvé, `pending` sinon |
+| `feature` | Grouping, must match the parent directory | Directory name |
+| `type` | Nature of the scenario | Inferred from the title and the content |
+| `priority` | **Feeds block D's scope** — the `critical` ones are the natural candidates for mutation testing | Inferred, to be approved |
+| `automated_test` | Reference `<path>::<test name>` | Lookup by name, snake_case heuristic |
+| `status` | State of the coverage | `covered` if a test was found, `pending` otherwise |
 
-`status: manual` signale un scénario qui restera vérifié à la main (parcours visuel, procédure QA) — il est exclu des checks de cohérence, jamais compté comme une lacune.
+`status: manual` flags a scenario that will stay verified by hand (visual walkthrough, QA procedure) — it is excluded from the consistency checks, never counted as a gap.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- « J'ai décoré N test-cases. M sont ambigus : [liste avec options a/b/c]. »
-- « Ce test-case n'a pas de test automatisé trouvé — `pending`, ou `manual` parce qu'il ne sera jamais automatisé ? »
-- « Ces N tests existent sans test-case associé. En créer, ou les ignorer (tests techniques) ? »
+- "I annotated N test-cases. M of them are ambiguous: [list with options a/b/c]."
+- "No automated test was found for this test-case — `pending`, or `manual` because it will never be automated?"
+- "These N tests exist with no matching test-case. Create some, or ignore them (technical tests)?"
 
 ---
 
-## 3. Entrée d'invariant « seuil de mutation » (brique D)
+## 3. "Mutation threshold" invariant entry (block D)
 
-Le seuil de mutation est un invariant comme les autres, avec deux champs supplémentaires : le périmètre et la baseline.
+The mutation threshold is an invariant like any other, with two extra fields: the scope and the baseline.
 
 ### Structure
 
 ```markdown
-## INV-0NN — Score de mutation du domaine ≥ 75%
+## INV-0NN — Domain mutation score ≥ 75%
 
-- **Statut** : actif
-- **Énoncé** : le score de mutation sur le périmètre critique ne descend pas sous 75%
-- **Source** : brique D du harness, périmètre « domaine critique » validé le AAAA-MM-JJ
-- **Périmètre** : `<globs ou modules>`
-- **Script** : `tools/harness/run_mutation.* --scope critical`
-- **Outil** : <outil détecté> — rapport parsable : <format>
-- **Sévérité** : warn (→ error prévu après stabilisation)
-- **Baseline** : 78.4% mesuré le AAAA-MM-JJ sur <sha>
-- **Remédiation** : lire les mutants survivants listés par le script. Pour chacun,
-  identifier le comportement non protégé et ajouter un test qui l'exprime. Ne jamais
-  ajouter un test dont la seule justification est de tuer un mutant — si un mutant
-  survivant ne correspond à aucun comportement qui compte, l'exclure explicitement
-  dans la config avec un commentaire justifiant l'exclusion.
+- **Status**: active
+- **Statement**: the mutation score over the critical scope does not fall below 75%
+- **Source**: harness block D, "critical domain" scope approved on YYYY-MM-DD
+- **Scope**: `<globs or modules>`
+- **Script**: `tools/harness/run_mutation.* --scope critical`
+- **Tool**: <detected tool> — parsable report: <format>
+- **Severity**: warn (→ error planned once stabilized)
+- **Baseline**: 78.4% measured on YYYY-MM-DD at <sha>
+- **Remediation**: read the surviving mutants listed by the script. For each one,
+  identify the unprotected behavior and add a test that expresses it. Never add
+  a test whose only justification is killing a mutant — if a surviving mutant
+  matches no behavior that counts, exclude it explicitly in the config with a
+  comment justifying the exclusion.
 ```
 
-### Règles de rédaction
+### Writing rules
 
-- **Le seuil initial est la baseline arrondie vers le bas**, jamais un chiffre rond aspirationnel. Son rôle est d'empêcher la régression, pas de fixer un objectif.
-- **La baseline est datée et rattachée à un sha.** Sans ça, impossible de dire si une variation vient du code ou d'un changement de périmètre.
-- **Un seuil ne se baisse jamais pour faire repasser la CI.** Si le score chute, c'est un comportement qui a perdu sa protection — la remédiation est un test, pas un ajustement de chiffre.
-- Le champ **Outil** est renseigné à la détection et pas figé dans le skill : il documente ce qui a été trouvé, pour que la relecture six mois plus tard sache quoi relancer.
+- **The initial threshold is the baseline rounded down**, never an aspirational round number. Its job is to prevent regression, not to set a goal.
+- **The baseline is dated and tied to a sha.** Without that, there is no telling whether a variation comes from the code or from a change of scope.
+- **A threshold is never lowered to get CI green again.** If the score drops, a behavior has lost its protection — the remediation is a test, not a number adjustment.
+- The **Tool** field is filled in at detection time and not frozen in the skill: it documents what was found, so that whoever reads this six months later knows what to re-run.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- « Périmètre du mutation testing : domaine critique / incrémental sur le diff / global / combinaison / abandonner la brique ? »
-- « Ces N modules portent les test-cases marqués `critique`. Périmètre correct ? »
-- « Baseline mesurée à X%. Je fixe le seuil à <X arrondi vers le bas>% en `warn` ? »
-- « Le score dépasse la baseline de plus de 5 points depuis N runs. Relever le seuil à Y% ? »
+- "Mutation testing scope: critical domain / incremental on the diff / global / a combination / drop the block?"
+- "These N modules carry the test-cases marked `critical`. Is the scope right?"
+- "Baseline measured at X%. Should I set the threshold at <X rounded down>% as `warn`?"
+- "The score has been more than 5 points above the baseline for N runs. Raise the threshold to Y%?"
 
 ---
 
-## 4. Prompt de la tâche planifiée (brique C)
+## 4. Scheduled task prompt (block C)
 
-Ne concerne que la variante **interprétation** de la brique C (voir `block-c-doc-gardening.md`, section 6.4), celle qui fait tourner un agent. Le rapport mécanique, lui, est un job de CI planifié et n'a pas de prompt.
+Concerns only the **interpretation** variant of block C (see `block-c-doc-gardening.md`, section 6.4), the one that runs an agent. The mechanical report is a scheduled CI job and has no prompt.
 
 ### Structure
 
-Trois éléments, quel que soit l'ordonnanceur de l'hôte — les noms de champs, eux, varient :
+Three elements, whatever the host's scheduler — the field names themselves vary:
 
-| Élément | Valeur |
+| Element | Value |
 |---|---|
-| Intitulé | `Harness — doc-gardening [nom du projet]` |
-| Cadence | expression cron choisie via QCM |
-| Prompt | celui ci-dessous, tel quel |
+| Title | `Harness — doc-gardening [project name]` |
+| Cadence | cron expression chosen through a multiple-choice question |
+| Prompt | the one below, as is |
 
 ```
-Relance le skill codebase-harness en mode mise à jour sur le projet [chemin].
-Ne modifie aucun fichier automatiquement — produis uniquement un rapport
-consolidé : violations d'invariants nouvelles, invariants obsolètes,
-test-cases dérivés (covered_broken ou nouveau test sans test-case),
-régression du score de mutation par rapport à la baseline et mutants
-survivants nouveaux, doc qui aurait dérivé. Si tout est au vert, dis-le et
-n'envoie rien d'autre.
+Re-run the codebase-harness skill in update mode on the project [path].
+Do not modify any file automatically — produce only a consolidated
+report: new invariant violations, obsolete invariants, drifted
+test-cases (covered_broken, or a new test with no test-case),
+mutation score regression against the baseline and new surviving
+mutants, documentation that has drifted. If everything is green, say so and
+send nothing else. Write the report in the language of the project.
 ```
 
-### Règles de rédaction
+### Writing rules
 
-- Le prompt doit contenir **« ne modifie aucun fichier automatiquement »** de façon explicite. La tâche s'exécute sans humain au clavier ; c'est la seule protection.
-- Le prompt doit contenir **« si tout est au vert, n'envoie rien »**. Une tâche qui produit un rapport vide toutes les semaines apprend à l'équipe à ne plus la lire.
-- Le chemin du projet est en dur : la tâche n'a pas de contexte de session.
+- The prompt must explicitly contain **"do not modify any file automatically"**. The task runs with no human at the keyboard; this is the only protection.
+- The prompt must contain **"if everything is green, send nothing"**. A task that produces an empty report every week teaches the team to stop reading it.
+- The project path is hardcoded: the task has no session context.
+- The prompt must say **"write the report in the language of the project"**. This skill is written in English; the report it installs in someone else's project is not.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- « Cadence : quotidienne / hebdomadaire / bi-mensuelle / mensuelle ? »
-- « Voici le prompt et la cadence. Je crée la tâche ? »
+- "Cadence: daily / weekly / twice monthly / monthly?"
+- "Here are the prompt and the cadence. Should I create the task?"
 
 ---
 
-## 5. Section « Harness » d'`AGENTS.md`
+## 5. The "Harness" section of `AGENTS.md`
 
-La structure complète est dans le SKILL.md, étape 7. Deux règles de rédaction s'appliquent :
+The full structure is in SKILL.md, step 7. Two writing rules apply:
 
-- **N'inclure que les sous-sections des briques réellement activées.** Une sous-section qui décrit un check inexistant fait perdre du temps aux agents et sape la confiance dans le reste du fichier.
-- **Ne jamais toucher la section « Documentation du projet »** générée par `codebase-cartographer`. Les deux skills coexistent dans le même fichier sans se marcher dessus.
+- **Include only the subsections of the blocks actually enabled.** A subsection describing a check that does not exist wastes agents' time and undermines trust in the rest of the file.
+- **Never touch the "Project documentation" section** generated by `codebase-cartographer`. The two skills coexist in the same file without stepping on each other.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- « J'ajoute la section Harness à AGENTS.md ? Voici le contenu proposé. »
-- « AGENTS.md a déjà une section Harness qui mentionne la brique X, désactivée depuis. Je la retire ? »
+- "Should I add the Harness section to AGENTS.md? Here is the proposed content."
+- "AGENTS.md already has a Harness section mentioning block X, disabled since then. Should I remove it?"
 
 ---
 
-## 6. Conventions d'écriture des scripts
+## 6. Script writing conventions
 
-Tous les scripts produits dans `tools/harness/` respectent le même contrat, quelle que soit la brique et quel que soit le langage. C'est ce contrat qui permet au mode mise à jour et à la tâche planifiée de les agréger sans les connaître individuellement.
+Every script produced in `tools/harness/` respects the same contract, whatever the block and whatever the language. That contract is what lets update mode and the scheduled task aggregate them without knowing them individually.
 
 ### Interface
 
-| Élément | Règle |
-|---------|-------|
-| `--explain` | Décrit la règle et son périmètre sans rien vérifier. Obligatoire. |
-| `--root <chemin>` | Permet de lancer le script hors du répertoire courant. Obligatoire. |
-| Sortie standard | Une ligne par violation, format `path:line: [INV-NNN] message — remédiation` |
-| Code 0 | Aucune violation |
-| Code 1 | Au moins une violation de sévérité `error` |
-| Code 2 | Uniquement des violations de sévérité `warn` |
+| Element | Rule |
+|---------|------|
+| `--explain` | Describes the rule and its scope without checking anything. Mandatory. |
+| `--root <path>` | Allows running the script from outside the current directory. Mandatory. |
+| Standard output | One line per violation, format `path:line: [INV-NNN] message — remediation` |
+| Exit code 0 | No violation |
+| Exit code 1 | At least one violation of severity `error` |
+| Exit code 2 | Only violations of severity `warn` |
 
-### Règle d'or des messages
+### Golden rule for messages
 
-Un message d'erreur est écrit **pour un agent qui n'a aucun contexte**. Le test : le message suffit-il à corriger sans ouvrir un autre fichier ?
+An error message is written **for an agent that has no context**. The test: is the message enough to fix the problem without opening another file?
 
 ```
 ✗  unauthorized import
 ✗  INV-001 violated
-✓  src/domaine/checkout.py:42: [INV-001] import de `requests` dans la couche domaine
-   — déplace l'appel HTTP vers `src/application/` et expose un port côté domaine
+✓  src/domain/checkout.py:42: [INV-001] `requests` imported in the domain layer
+   — move the HTTP call to `src/application/` and expose a port on the domain side
 ```
 
-### Interdits
+### Forbidden
 
-- **Aucun auto-fix.** Même quand le correctif est évident. Le harness produit un signal ; le fix passe par un commit visible.
-- **Aucune modification de sa propre config ou de son seuil.** Un ajustement est une décision, il passe par QCM et par `invariants.md`.
-- **Aucune dépendance à installer** pour les scripts de vérification documentaire. Ils tournent en CI minimale ; s'ils exigent un `pip install`, ils finiront désactivés.
+- **No auto-fix.** Even when the fix is obvious. The harness produces a signal; the fix goes through a visible commit.
+- **No modification of its own config or its own threshold.** An adjustment is a decision; it goes through a multiple-choice question and through `invariants.md`.
+- **No dependency to install** for the documentation checking scripts. They run on a minimal CI; if they require a `pip install`, they will end up disabled.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- « Le script check_X déclenche N faux positifs sur le code existant. Je corrige le script, ou j'assouplis la règle ? »
-- « Passer INV-00X de `warn` à `error` ? Les violations existantes sont à zéro depuis N jours. »
+- "The check_X script fires N false positives on the existing code. Should I fix the script, or loosen the rule?"
+- "Move INV-00X from `warn` to `error`? Existing violations have been at zero for N days."

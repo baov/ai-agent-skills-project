@@ -1,115 +1,114 @@
-# DDD Stratégique — Contextes, intégration, distillation
+# Strategic DDD — Contexts, integration, distillation
 
-Référence pour le mode Guide (découpage, intégration, priorités) et le mode Audit
-(section Symptômes).
+Reference for guidance mode (splitting, integration, priorities) and for audit mode
+(Symptoms section).
 
-## Sommaire
-1. Langage omniprésent
-2. Contexte borné
-3. Carte de contexte
-4. Patterns de relation entre contextes (+ arbre de choix)
-5. Distillation : Cœur de domaine et Sous-domaines génériques
-6. Symptômes d'audit stratégiques
+## Contents
+1. Ubiquitous language
+2. Bounded context
+3. Context map
+4. Relationship patterns between contexts (+ decision tree)
+5. Distillation: core domain and generic subdomains
+6. Strategic audit symptoms
 
 ---
 
-## 1. Langage omniprésent (Ubiquitous Language)
+## 1. Ubiquitous language
 
-Langage commun bâti **sur le modèle**, utilisé partout : oral, écrit, diagrammes, code.
-- Un changement dans le langage EST un changement dans le modèle (et inversement).
-- Les experts métier doivent rejeter les termes maladroits ; les développeurs doivent
-  traquer ambiguïtés et incohérences.
-- Diagnostics : la « traduction » permanente en réunion est le signal d'échec n° 1 ;
-  les concepts qui n'existent qu'à l'oral et jamais dans le code sont des concepts perdus.
-- Préférer plusieurs petits diagrammes + texte à un méga-diagramme illisible ; les longs
-  documents désynchronisés du modèle sont nuisibles.
+A shared language built **on the model**, used everywhere: speech, writing, diagrams, code.
+- A change in the language IS a change in the model, and the other way round.
+- Domain experts must reject awkward terms; developers must hunt down ambiguity and
+  inconsistency.
+- Diagnostics: constant "translation" in meetings is failure signal number one; concepts that
+  live only in conversation and never in the code are concepts lost.
+- Prefer several small diagrams plus text over one unreadable mega-diagram; long documents
+  that drift out of sync with the model do harm.
 
-## 2. Contexte borné (Bounded Context)
+## 2. Bounded context
 
-Périmètre explicite (équipe, parties de l'application, bases de code, schémas de BDD) dans
-lequel un modèle est strictement cohérent et unifié.
+An explicit boundary (a team, parts of the application, codebases, database schemas) within
+which a model is strictly consistent and unified.
 
-- Un gros modèle d'entreprise unifié est un idéal qui s'effondre : **diviser sciemment**.
-- Taille : assignable à une seule équipe ; les éléments liés formant un concept naturel
-  vont ensemble.
-- Un Contexte borné N'EST PAS un Module : le contexte englobe les modules.
-- Chaque contexte porte un nom, qui entre dans le Langage omniprésent.
-- À l'intérieur d'un contexte : **Intégration continue** (fusion fréquente, build, tests
-  automatisés) pour empêcher la fragmentation du modèle.
+- One big unified enterprise model is an ideal that collapses: **divide deliberately**.
+- Size: it must fit a single team; elements that form a natural concept together belong
+  together.
+- A bounded context is NOT a module: the context contains the modules.
+- Every context carries a name, and that name joins the ubiquitous language.
+- Inside a context: **continuous integration** (frequent merges, build, automated tests) to
+  stop the model from fragmenting.
 
-## 3. Carte de contexte (Context Map)
+## 3. Context map
 
-Document (diagramme ou texte) montrant tous les Contextes bornés et leurs relations, y
-compris les mappages de traduction. Partagée et comprise par tous.
+A document (diagram or text) showing every bounded context and the relationships between
+them, translation mappings included. Shared with and understood by everyone.
 
-En Mermaid, format recommandé pour la restitution d'audit :
+In Mermaid, the recommended shape for an audit write-up:
 
 ```mermaid
 graph LR
-  subgraph Boutique["Contexte Boutique en ligne"]
-    B[Modèle vente]
+  subgraph Shop["Online Shop context"]
+    B[Sales model]
   end
-  subgraph Reporting["Contexte Reporting"]
-    R[Modèle analyse]
+  subgraph Reporting["Reporting context"]
+    R[Analytics model]
   end
-  subgraph Expédition["Contexte Expédition"]
-    E[Modèle logistique]
+  subgraph Shipping["Shipping context"]
+    E[Logistics model]
   end
-  B -- "Client-Fournisseur (schéma BDD)" --> R
-  B -- "Messages asynchrones (OV)" --> E
+  B -- "Customer/Supplier (DB schema)" --> R
+  B -- "Asynchronous messages (value objects)" --> E
 ```
 
-## 4. Patterns de relation entre contextes
+## 4. Relationship patterns between contexts
 
-| Pattern | Quand | Coût / risque |
+| Pattern | When | Cost / risk |
 |---|---|---|
-| **Noyau partagé** | Deux équipes proches, sous-ensemble du modèle réellement commun | Modification du noyau = consultation mutuelle, fusions fréquentes, tests des deux équipes |
-| **Client-Fournisseur** | Dépendance unidirectionnelle, fournisseur motivé (idéalement même management) | Réunions de planning, tests d'acceptation d'interface automatisés côté fournisseur |
-| **Conformiste** | Fournisseur non coopératif MAIS son modèle est bon | On adhère au modèle d'autrui sans pouvoir le modifier |
-| **Couche anticorruption** | Système historique / externe au modèle confus ou très différent | Façades + Adaptateurs + Traducteurs ; effort d'implémentation |
-| **Chemins séparés** | L'intégration coûte plus qu'elle ne rapporte | Quasi-impossible à réintégrer plus tard ; IHM portail commune au plus |
-| **Service Hôte ouvert** | Un sous-système utilisé par BEAUCOUP d'autres | Protocole public cohérent ; traducteurs exceptionnels pour les besoins idiosyncratiques |
+| **Shared kernel** | Two teams working closely, a subset of the model genuinely in common | Changing the kernel means consulting each other, frequent merges, both teams' tests |
+| **Customer/Supplier** | One-way dependency, a motivated supplier (ideally the same management) | Planning meetings, automated interface acceptance tests on the supplier side |
+| **Conformist** | An uncooperative supplier BUT a good model | You adopt someone else's model with no power to change it |
+| **Anti-corruption layer** | A legacy or external system whose model is confused or very different | Facades plus adapters plus translators; implementation effort |
+| **Separate ways** | Integration costs more than it returns | Near impossible to reintegrate later; a shared portal UI at most |
+| **Open host service** | One subsystem used by MANY others | A coherent public protocol; one-off translators for idiosyncratic needs |
 
-Arbre de choix (à dérouler avec l'utilisateur, une question discriminante à la fois) :
+Decision tree (walk it with the user, one discriminating question at a time):
 
 ```
-L'intégration apporte-t-elle une vraie valeur ?
-├── NON → Chemins séparés
-└── OUI
-    ├── Plusieurs consommateurs du même sous-système ? → Service Hôte ouvert
-    ├── Système historique / modèle externe confus ? → Couche anticorruption
-    ├── Dépendance unidirectionnelle ?
-    │   ├── Fournisseur coopératif (même management) ? → Client-Fournisseur
-    │   └── Non coopératif, modèle bien fait ? → Conformiste
-    │       └── Modèle mal fait ? → Couche anticorruption
-    └── Vrai sous-ensemble commun + équipes coordonnées ? → Noyau partagé
+Does integration bring real value?
+├── NO → Separate ways
+└── YES
+    ├── Several consumers of the same subsystem? → Open host service
+    ├── Legacy system / confused external model? → Anti-corruption layer
+    ├── One-way dependency?
+    │   ├── Cooperative supplier (same management)? → Customer/Supplier
+    │   └── Uncooperative, but a well-built model? → Conformist
+    │       └── A badly built model? → Anti-corruption layer
+    └── A genuine common subset + coordinated teams? → Shared kernel
 ```
 
-Implémentation d'une Couche anticorruption : un Service (vu du client) → Façade →
-Adaptateur → Traducteur(s) → système externe. Un Adaptateur par Façade, jamais un
-Adaptateur fourre-tout.
+Implementing an anti-corruption layer: a service (as the client sees it) → facade → adapter →
+translator(s) → the external system. One adapter per facade, never a catch-all adapter.
 
 ## 5. Distillation
 
-Séparer le **Cœur de domaine** (l'essentiel différenciant, le « vrai capital métier ») des
-**Sous-domaines génériques** (argent/devises, routage, graphiques...).
+Separate the **core domain** (the differentiating essence, the real business capital) from the
+**generic subdomains** (money and currencies, routing, charts...).
 
-- Le Cœur est relatif : la Route est le cœur d'un système de routage, un sous-domaine
-  générique pour la surveillance aérienne (dont le cœur est la synthèse de trajectoire 4D).
-- Meilleurs développeurs sur le Cœur ; sous-domaines génériques en priorité basse.
-- Options pour un sous-domaine générique : solution du commerce, sous-traitance, modèle
-  publié existant, implémentation maison (du moins intégré au plus intégré).
-- Tout investissement hors Cœur se justifie par son bénéfice POUR le Cœur.
-- Le Cœur émerge par refactorings successifs, pas d'un coup.
+- The core is relative: the Route is the core of a routing system and a generic subdomain for
+  air traffic monitoring (whose core is 4D trajectory synthesis).
+- Best developers on the core; generic subdomains are low priority.
+- Options for a generic subdomain: an off-the-shelf solution, outsourcing, an existing
+  published model, an in-house implementation (least integrated to most integrated).
+- Every investment outside the core is justified by what it buys FOR the core.
+- The core emerges through successive refactorings, not in one go.
 
-## 6. Symptômes d'audit stratégiques
+## 6. Strategic audit symptoms
 
-| # | Symptôme | Indices | Gravité typique | Remédiation |
+| # | Symptom | Clues | Typical severity | Remediation |
 |---|---|---|---|---|
-| S1 | Gros modèle unique contradictoire | Mêmes termes avec des sens différents selon les zones ; modifications d'une équipe qui cassent l'autre | Bloquant | Définir les Contextes bornés, nommer, cartographier |
-| S2 | Frontières implicites | Personne ne sait dans quel contexte tel module vit ; pas de convention de nommage par contexte | Majeur | Carte de contexte + mapping contexte ↔ modules |
-| S3 | Intégration sauvage | Accès direct à la BDD d'un autre contexte ; pas de couche de traduction vers le legacy | Majeur | Choisir un pattern de relation (arbre §4) ; souvent Couche anticorruption |
-| S4 | Couplage de schéma BDD | Plusieurs applis sur le même schéma sans accord de gouvernance | Majeur | Relation Client-Fournisseur explicite + tests d'interface |
-| S5 | Traduction permanente | Glossaires parallèles, jargon technique vs jargon métier en réunion | Majeur | (Re)construire le Langage omniprésent ; refactorer les noms |
-| S6 | Cœur indiscernable | La logique différenciante mélangée au générique ; meilleurs devs sur l'infra | Majeur | Distillation : nommer le Cœur, extraire les sous-domaines génériques en modules |
-| S7 | Duplication inter-équipes | Couches de traduction redondantes, efforts en double | Mineur | Noyau partagé ou Service Hôte ouvert selon le cas |
+| S1 | One big contradictory model | The same terms mean different things in different areas; one team's changes break another's | Blocking | Define the bounded contexts, name them, map them |
+| S2 | Implicit boundaries | Nobody knows which context a given module lives in; no per-context naming convention | Major | Context map plus a context-to-module mapping |
+| S3 | Ad hoc integration | Direct access to another context's database; no translation layer towards the legacy system | Major | Pick a relationship pattern (tree in section 4); often an anti-corruption layer |
+| S4 | DB schema coupling | Several applications on the same schema with no governance agreement | Major | An explicit customer/supplier relationship plus interface tests |
+| S5 | Constant translation | Parallel glossaries, technical jargon against domain jargon in meetings | Major | (Re)build the ubiquitous language; refactor the names |
+| S6 | Indistinguishable core | The differentiating logic mixed in with the generic; the best developers on infrastructure | Major | Distillation: name the core, extract the generic subdomains into modules |
+| S7 | Duplication across teams | Redundant translation layers, duplicated effort | Minor | Shared kernel or open host service, depending on the case |

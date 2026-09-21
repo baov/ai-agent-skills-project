@@ -1,303 +1,303 @@
 ---
 name: codebase-harness
-description: Couche d'enforcement déterministe pour qu'un codebase reste cohérent quand des agents IA y contribuent. Quatre briques optionnelles proposées via QCM : (A) invariants exécutables — ADR, règles d'architecture et seuils de forme (taille, complexité) transformés en linters custom pre-commit/CI ; (B) pont test-cases ↔ tests réels — front-matter YAML + script de couverture ; (D) mutation testing — vérifie que les tests non relus attraperaient réellement un bug ; outil détecté selon la stack, périmètre calibré par criticité ; (C) doc-gardening — tâche planifiée (CI ou ordonnanceur de l'hôte) qui signale les dérives. Artefacts dans `tools/harness/` et `docs/technical/invariants.md`. À utiliser quand l'utilisateur veut un "harness pour agents", "rendre les ADR exécutables", des "linters custom", de l'"architecture enforcement" (ArchUnit, dependency-cruiser), du "mutation testing", ou dit que "ses tests ne testent rien". Marche mieux après `codebase-cartographer`, tourne aussi en mode dégradé.
-compatibility: Nécessite git et un shell. La brique C suppose en plus un ordonnanceur — CI planifiée (GitHub Actions, pipeline GitLab), tâche planifiée de l'agent hôte, ou cron.
+description: Deterministic enforcement layer that keeps a codebase coherent while AI agents contribute to it. Four optional blocks offered through multiple-choice questions: (A) executable invariants — ADRs, architecture rules and shape thresholds (size, complexity) turned into custom pre-commit/CI linters; (B) test-case bridge to real tests — YAML front-matter + a coverage script; (D) mutation testing — checks that unreviewed tests would really catch a bug; tool detected from the stack, scope calibrated by criticality; (C) doc-gardening — a scheduled task (CI or the host's scheduler) that reports drift. Artifacts in `tools/harness/` and `docs/technical/invariants.md`. Use when the user wants an "agent harness", to "make ADRs executable", "custom linters", "architecture enforcement" (ArchUnit, dependency-cruiser), "mutation testing", or says "my tests don't test anything". Works best after `codebase-cartographer`, also runs in degraded mode.
+compatibility: Requires git and a shell. Block C additionally assumes a scheduler — scheduled CI (GitHub Actions, GitLab pipeline), a scheduled task of the host agent, or cron.
 ---
 
 # Codebase Harness
 
-Met en place une couche d'enforcement déterministe pour qu'un codebase reste cohérent quand des agents IA (ou des humains pressés) y contribuent. La documentation seule ne suffit pas : il faut des checks mécaniques qui empêchent les dérives avant qu'elles n'arrivent en main.
+Sets up a deterministic enforcement layer so a codebase stays coherent while AI agents (or humans in a hurry) contribute to it. Documentation alone is not enough: it takes mechanical checks that stop drift before it lands on main.
 
 ## Doctrine
 
-**Le harness n'existe pas pour compenser la vitesse des agents. Il existe pour l'encadrer.** Quand une machine écrit le code, la boucle de contrôle devient plus stricte, pas moins — c'est précisément parce que le débit augmente que les garde-fous doivent être mécaniques plutôt que déclaratifs. Un harness traité comme un simple outil de lint rate son objet.
+**The harness does not exist to compensate for how fast agents go. It exists to frame it.** When a machine writes the code, the control loop gets stricter, not looser — it is precisely because throughput rises that the guardrails have to be mechanical rather than declarative. A harness treated as just another lint tool misses its point.
 
-Trois conséquences qui gouvernent tout ce qui suit :
+Three consequences govern everything that follows:
 
-1. **Un check non exécuté n'est pas un check.** Une règle écrite dans un ADR ou un AGENTS.md est une intention ; un script qui sort en code 1 est une contrainte. Le rôle de ce skill est de convertir les premières en secondes.
-2. **Ce qui n'est pas relu doit être vérifié autrement.** Plus la relecture humaine se raréfie sur un artefact, plus la vérification mécanique de cet artefact doit être forte. C'est la raison d'être de la brique D : des tests que personne ne relit ont besoin d'un contrôle qui ne soit pas la relecture.
-3. **La profondeur se calibre sur la criticité, pas sur la disponibilité de l'outil.** Empiler tous les checks sur toutes les tâches est facile à automatiser et rarement justifié. Chaque brique doit pouvoir être restreinte à un périmètre.
+1. **A check that never runs is not a check.** A rule written in an ADR or in an AGENTS.md is an intention; a script that exits with code 1 is a constraint. This skill's job is to turn the former into the latter.
+2. **What is not reviewed must be verified some other way.** The rarer human review gets on an artifact, the stronger the mechanical verification of that artifact has to be. That is block D's reason to exist: tests nobody reviews need a check that is not review.
+3. **Depth is calibrated on criticality, not on whether the tool happens to be available.** Stacking every check onto every task is easy to automate and rarely justified. Every block must be restrictable to a scope.
 
-> **Skill compagnon** : ce skill marche mieux après [`codebase-cartographer`](#) qui produit les ADR, l'architecture documentée et les test-cases. Mais il peut aussi tourner en mode dégradé sur un projet sans cette doc — il s'adapte à ce qu'il trouve et pose les questions manquantes directement.
+> **Companion skill**: this skill works best after [`codebase-cartographer`](#), which produces the ADRs, the documented architecture and the test-cases. But it can also run in degraded mode on a project without that documentation — it adapts to what it finds and asks the missing questions directly.
 
-## Les quatre briques
+## The four blocks
 
-Le skill propose quatre briques indépendantes. L'utilisateur peut en activer une, plusieurs, toutes ou aucune. Chacune est proposée via QCM au début du run.
+The skill offers four independent blocks. The user can enable one, several, all or none of them. Each is offered through a multiple-choice question at the start of the run.
 
-| Brique | Produit | Source d'inspiration |
+| Block | Produces | Drawn from |
 |--------|---------|----------------------|
-| **A — Invariants exécutables** | `docs/technical/invariants.md` + linters dans `tools/harness/` + intégration pre-commit/CI | ADR, contraintes d'architecture, seuils de forme, conventions de l'équipe |
-| **B — Pont test-cases ↔ tests réels** | Front-matter YAML dans chaque test-case.md + `tools/harness/check_test_coverage.*` | Test-cases existants + suite de tests automatisés |
-| **D — Mutation testing** | Config de l'outil détecté + `tools/harness/run_mutation.*` + seuils par périmètre dans `invariants.md` | Suite de tests existante, périmètres critiques du domaine |
-| **C — Doc-gardening automatisé** | Tâche planifiée (cadence configurable) qui produit un rapport sans rien modifier | Doc existante + checks A, B et D |
+| **A — Executable invariants** | `docs/technical/invariants.md` + linters in `tools/harness/` + pre-commit/CI integration | ADRs, architecture constraints, shape thresholds, team conventions |
+| **B — Test-case bridge to real tests** | YAML front-matter in every test-case.md + `tools/harness/check_test_coverage.*` | Existing test-cases + the automated test suite |
+| **D — Mutation testing** | Config for the detected tool + `tools/harness/run_mutation.*` + per-scope thresholds in `invariants.md` | Existing test suite, critical scopes of the domain |
+| **C — Automated doc-gardening** | Scheduled task (configurable cadence) producing a report without modifying anything | Existing documentation + the A, B and D checks |
 
-**Les briques B et D répondent à deux questions différentes.** B vérifie qu'un test *existe* pour un comportement documenté. D vérifie qu'un test *attraperait un bug* s'il y en avait un. Un test-case peut être `covered` au sens de B et protégé par un test qui n'assert rien — seule D voit ce cas. Les activer ensemble est le cas nominal ; activer B seule laisse un angle mort connu.
-
----
-
-## Vue d'ensemble du workflow
-
-```
-[Première exécution]
-1. Détection du contexte (cartographer a-t-il tourné ? quels artefacts trouve-t-on ?)
-2. QCM de scoping : quelles briques activer parmi A, B, D, C ?
-3. Pour chaque brique activée :
-   a. Analyse + QCM ciblé
-   b. Production des artefacts (md, scripts, config, tâche planifiée)
-   c. Proposition d'intégration (pre-commit, CI) — JAMAIS appliquée sans validation
-4. Mise à jour de la section "Harness" dans AGENTS.md (avec QCM)
-
-[Ré-exécution : mode mise à jour]
-1. Inventaire des briques déjà installées (présence de tools/harness/, invariants.md, config mutation, tâche planifiée)
-2. Pour chaque brique : exécution des checks existants + analyse du delta
-3. Rapport consolidé (violations nouvelles, invariants obsolètes, test-cases dérivés, régression du score de mutation)
-4. QCM groupé pour proposer les ajustements (jamais rien d'auto)
-```
-
-**Principe central** : ce skill ne modifie jamais le code applicatif. Il produit uniquement des fichiers de doc, des scripts dans `tools/harness/`, et des configs d'intégration (proposées, pas écrites). Les violations détectées sont remontées à l'humain, jamais corrigées en silence.
+**Blocks B and D answer two different questions.** B checks that a test *exists* for a documented behavior. D checks that a test *would catch a bug* if there were one. A test-case can be `covered` in B's sense and still be guarded by a test that asserts nothing — only D sees that case. Enabling both is the nominal case; enabling B alone leaves a known blind spot.
 
 ---
 
-## Étape 1 — Détection du contexte
+## Workflow overview
 
-Avant tout, l'agent inspecte le projet pour comprendre ce qu'il a à sa disposition. En parallèle :
+```
+[First run]
+1. Context detection (has cartographer run? which artifacts are there?)
+2. Scoping question: which blocks to enable among A, B, D, C?
+3. For each enabled block:
+   a. Analysis + targeted multiple-choice question
+   b. Artifact production (md, scripts, config, scheduled task)
+   c. Integration proposal (pre-commit, CI) — NEVER applied without approval
+4. Update of the "Harness" section in AGENTS.md (with a multiple-choice question)
 
-- `docs/technical/architecture.md` existe-t-il ? Contient-il une section « Contraintes structurelles » ?
-- `docs/technical/adr.md` et `docs/technical/adr/*.md` existent-ils ? Si oui, lire tous les ADR pour extraire les décisions structurantes.
-- `docs/business/test-cases/**/*.md` existe-t-il ? Compter, et noter si un front-matter YAML est déjà présent.
-- `tools/harness/` existe-t-il déjà ? (signature : ce skill a déjà tourné)
-- `docs/technical/invariants.md` existe-t-il ? (idem)
-- Inspecter la stack pour choisir le bon type de linter : Python (AST), JS/TS (ESLint custom ou dependency-cruiser), JVM (ArchUnit), Go (analyzer custom), Rust (clippy + custom lints), etc.
-- Repérer l'outillage de mutation déjà présent, en cherchant dans les manifestes et les configs de la stack détectée (ex. `pitest` dans `pom.xml`/`build.gradle(.kts)`, `@stryker-mutator/*` dans `package.json`, `stryker.conf.*`, `infection.json`, `setup.cfg`/`pyproject.toml` pour mutmut) ainsi que les dossiers de rapports déjà versionnés. Noter aussi le runner de tests et, si possible, la durée d'une exécution complète de la suite — c'est la donnée qui conditionne la brique D.
-- Inspecter la CI : `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, etc. pour savoir où proposer l'intégration.
-- Inspecter pre-commit : `.pre-commit-config.yaml`, `lefthook.yml`, `.husky/`, `package.json` (husky), etc.
+[Re-run: update mode]
+1. Inventory of the blocks already installed (presence of tools/harness/, invariants.md, mutation config, scheduled task)
+2. For each block: run the existing checks + analyze the delta
+3. Consolidated report (new violations, obsolete invariants, drifted test-cases, mutation score regression)
+4. Grouped multiple-choice question to propose the adjustments (nothing automatic, ever)
+```
 
-Si le skill détecte que `tools/harness/` ou `invariants.md` existent déjà, il bascule en **mode mise à jour** (voir section dédiée). C'est idempotent.
-
-Si la doc cartographer n'a pas tourné (pas d'ADR, pas de test-cases), l'agent le signale et explique :
-
-> « Je peux quand même mettre en place une couche harness, mais j'aurai besoin de te poser les questions sur les règles d'architecture directement. Si tu préfères, lance d'abord `codebase-cartographer` pour structurer la doc, puis reviens ici. Que choisis-tu ? »
-
-QCM avec deux options : « continuer en mode dégradé » / « stop, je vais d'abord lancer cartographer ».
+**Core principle**: this skill never modifies application code. It only produces documentation files, scripts in `tools/harness/`, and integration configs (proposed, not written). Detected violations are reported back to the human, never fixed silently.
 
 ---
 
-## Étape 2 — QCM de scoping
+## Step 1 — Context detection
 
-L'agent présente les trois briques avec un résumé d'une phrase chacune et demande lesquelles activer. Format type :
+First of all, the agent inspects the project to understand what it has at hand. In parallel:
+
+- Does `docs/technical/architecture.md` exist? Does it contain a "Structural constraints" section?
+- Do `docs/technical/adr.md` and `docs/technical/adr/*.md` exist? If so, read every ADR to extract the structuring decisions.
+- Does `docs/business/test-cases/**/*.md` exist? Count them, and note whether YAML front-matter is already present.
+- Does `tools/harness/` already exist? (signature: this skill has already run)
+- Does `docs/technical/invariants.md` exist? (same)
+- Inspect the stack to pick the right kind of linter: Python (AST), JS/TS (custom ESLint or dependency-cruiser), JVM (ArchUnit), Go (custom analyzer), Rust (clippy + custom lints), and so on.
+- Spot the mutation tooling already in place, by searching the manifests and configs of the detected stack (e.g. `pitest` in `pom.xml`/`build.gradle(.kts)`, `@stryker-mutator/*` in `package.json`, `stryker.conf.*`, `infection.json`, `setup.cfg`/`pyproject.toml` for mutmut) as well as report directories already committed. Note the test runner too and, if possible, how long a full run of the suite takes — that is the number block D hinges on.
+- Inspect the CI: `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, etc. to know where to propose the integration.
+- Inspect pre-commit: `.pre-commit-config.yaml`, `lefthook.yml`, `.husky/`, `package.json` (husky), etc.
+
+If the skill detects that `tools/harness/` or `invariants.md` already exist, it switches to **update mode** (see the dedicated section). This is idempotent.
+
+If the cartographer documentation was never produced (no ADRs, no test-cases), the agent announces it and explains:
+
+> "I can set up a harness layer anyway, but I will have to ask you about the architecture rules directly. If you prefer, run `codebase-cartographer` first to structure the documentation, then come back here. Which one do you pick?"
+
+Multiple-choice question with two options: "continue in degraded mode" / "stop, I will run cartographer first".
+
+---
+
+## Step 2 — Scoping question
+
+The agent presents the four blocks with a one-sentence summary each and asks which ones to enable. Typical format:
 
 ```
-Trois briques disponibles :
+Four blocks available:
 
-A — Invariants exécutables
-    Transforme tes règles d'architecture et tes ADR en linters custom qui
-    tournent en pre-commit/CI. Coût d'installation : moyen (1 script par règle).
-    Coût de maintenance : faible. Recommandé si > 2 développeurs ou si des
-    agents IA contribuent.
+A — Executable invariants
+    Turns your architecture rules and your ADRs into custom linters that run
+    in pre-commit/CI. Setup cost: medium (1 script per rule). Maintenance
+    cost: low. Recommended if there are > 2 developers or if AI agents
+    contribute.
 
-B — Pont test-cases ↔ tests réels
-    Ajoute un front-matter YAML à tes test-cases métier et produit un script
-    qui vérifie qu'ils pointent vers des tests qui existent vraiment. Coût
-    d'installation : faible. Coût de maintenance : nul. Recommandé si tu
-    as déjà des test-cases sous docs/business/test-cases/.
+B — Test-case bridge to real tests
+    Adds YAML front-matter to your business test-cases and produces a script
+    that checks they point at tests that really exist. Setup cost: low.
+    Maintenance cost: none. Recommended if you already have test-cases under
+    docs/business/test-cases/.
 
 D — Mutation testing
-    Injecte des bugs artificiels dans le code et vérifie que tes tests les
-    attrapent. C'est le seul check qui mesure la *qualité des assertions*
-    plutôt que l'exécution de lignes. Coût d'installation : faible (config).
-    Coût d'exécution : ÉLEVÉ — un run complet se compte en dizaines de
-    minutes. Coût de maintenance : faible. Recommandé si des agents écrivent
-    des tests que personne ne relit ligne à ligne.
+    Injects artificial bugs into the code and checks that your tests catch
+    them. It is the only check that measures *assertion quality* rather than
+    line execution. Setup cost: low (config). Run cost: HIGH — a full run
+    takes tens of minutes. Maintenance cost: low. Recommended if agents write
+    tests nobody reviews line by line.
 
-C — Doc-gardening automatisé
-    Crée une tâche planifiée hebdo (ou autre cadence) qui re-vérifie la doc
-    et les checks au fil du temps, et te remonte un rapport. Aucun fichier
-    modifié sans validation. Recommandé si le projet évolue régulièrement.
+C — Automated doc-gardening
+    Creates a weekly (or other cadence) scheduled task that re-checks the
+    documentation and the checks as time goes by, and reports back to you.
+    No file modified without approval. Recommended if the project changes
+    regularly.
 ```
 
-QCM multi-sélection (doctrine dans `clarify-with-choices`) : « Lesquelles activer ? A / B / D / C / toutes / aucune ». Si « aucune » → fin du skill avec message « Compris, rien à faire. ».
+Multi-select multiple-choice question (doctrine in `clarify-with-choices`): "Which ones to enable? A / B / D / C / all / none". If "none" → the skill ends with the message "Understood, nothing to do.".
 
-L'ordre d'exécution est imposé : **A → B → D → C**. B s'appuie potentiellement sur la stack détectée à A ; D s'appuie sur B pour cibler les périmètres critiques (les test-cases marqués `priorite: critique` sont le meilleur candidat de départ) ; C s'appuie sur A, B et D pour savoir quoi monitorer.
+The execution order is fixed: **A → B → D → C**. B may rely on the stack detected in A; D relies on B to target the critical scopes (the test-cases marked `priority: critical` are the best starting candidates); C relies on A, B and D to know what to monitor.
 
-Si l'utilisateur active D sans B, le signaler une fois : le périmètre de mutation devra être défini à la main faute de test-cases priorisés. Ce n'est pas bloquant.
+If the user enables D without B, say so once: the mutation scope will have to be defined by hand for lack of prioritized test-cases. This is not blocking.
 
 ---
 
-## Étapes 3 à 6 — Les briques
+## Steps 3 to 6 — The blocks
 
-Chaque brique retenue au QCM de scoping se déroule dans son propre fichier.
-**Ne lire que celles qui ont été activées** : l'ordre d'exécution imposé reste
+Each block kept at the scoping question runs in its own file.
+**Read only the ones that were enabled**: the fixed execution order stays
 A → B → D → C.
 
-| Brique | Procédure détaillée |
+| Block | Detailed procedure |
 |---|---|
-| A — Invariants exécutables | [`references/block-a-invariants.md`](references/block-a-invariants.md) |
-| B — Pont test-cases ↔ tests réels | [`references/block-b-test-case-bridge.md`](references/block-b-test-case-bridge.md) |
+| A — Executable invariants | [`references/block-a-invariants.md`](references/block-a-invariants.md) |
+| B — Test-case bridge to real tests | [`references/block-b-test-case-bridge.md`](references/block-b-test-case-bridge.md) |
 | D — Mutation testing | [`references/block-d-mutation.md`](references/block-d-mutation.md) |
-| C — Doc-gardening automatisé | [`references/block-c-doc-gardening.md`](references/block-c-doc-gardening.md) |
+| C — Automated doc-gardening | [`references/block-c-doc-gardening.md`](references/block-c-doc-gardening.md) |
 
-Chaque fichier suit la même structure : pré-requis et arbitrage du coût,
-production des artefacts, proposition d'intégration pre-commit/CI. Aucun n'écrit
-quoi que ce soit sans validation explicite.
+Every file follows the same structure: prerequisites and cost trade-off,
+artifact production, pre-commit/CI integration proposal. None of them writes
+anything without explicit approval.
 
-## Étape 7 — Mise à jour d'AGENTS.md
+## Step 7 — Updating AGENTS.md
 
-L'agent ajoute (ou met à jour) une section dans `AGENTS.md`. **Toujours avec QCM avant d'écrire**.
+The agent adds (or updates) a section in `AGENTS.md`. **Always with a multiple-choice question before writing**.
 
-**Compatibilité Claude Code.** `AGENTS.md` est lu nativement par la plupart des agents, mais pas par Claude Code, qui cherche `CLAUDE.md`. Si le projet n'a pas de `CLAUDE.md`, ou en a un qui n'importe pas `AGENTS.md`, proposer par QCM d'y ajouter la ligne d'import :
+**Claude Code compatibility.** `AGENTS.md` is read natively by most agents, but not by Claude Code, which looks for `CLAUDE.md`. If the project has no `CLAUDE.md`, or has one that does not import `AGENTS.md`, offer through a multiple-choice question to add the import line to it:
 
 ```markdown
 @AGENTS.md
 ```
 
-Une seule source de vérité, lisible par tous. Ne jamais dupliquer le contenu dans les deux fichiers : deux copies divergent.
+A single source of truth, readable by all. Never duplicate the content across both files: two copies drift apart.
 
 
-### Contenu de la section
+### Section content
 
 ```markdown
 ## Harness
 
-Ce projet a une couche d'enforcement déterministe générée par le skill `codebase-harness`. Les agents doivent respecter ces règles.
+This project has a deterministic enforcement layer generated by the `codebase-harness` skill. Agents must comply with these rules.
 
-### Invariants exécutables
+### Executable invariants
 
-Les règles d'architecture sont rendues exécutables par des scripts dans `tools/harness/`. Liste complète et statuts dans [docs/technical/invariants.md](docs/technical/invariants.md).
+The architecture rules are made executable by scripts in `tools/harness/`. Full list and statuses in [docs/technical/invariants.md](docs/technical/invariants.md).
 
-- Avant tout commit, lancer : `bash tools/harness/run_all.sh` (ou les scripts individuels)
-- Les messages d'erreur de chaque linter incluent la remédiation à appliquer — lis-les avant de chercher ailleurs
-- Pour comprendre un invariant sans le vérifier : `python tools/harness/check_<sujet>.py --explain`
+- Before any commit, run: `bash tools/harness/run_all.sh` (or the individual scripts)
+- Each linter's error messages include the remediation to apply — read them before looking elsewhere
+- To understand an invariant without checking it: `python tools/harness/check_<subject>.py --explain`
 
-### Pont test-cases ↔ tests réels
+### Test-case bridge to real tests
 
-Chaque scénario sous `docs/business/test-cases/` porte un front-matter YAML qui pointe vers son test automatisé. Le script `tools/harness/check_test_coverage.*` vérifie la cohérence.
+Every scenario under `docs/business/test-cases/` carries YAML front-matter pointing to its automated test. The `tools/harness/check_test_coverage.*` script checks the consistency.
 
-- Ajout d'un test-case → remplir le front-matter (champ `automated_test` ou `status: pending`)
-- Ajout d'un test → vérifier qu'il a un test-case correspondant, sinon en créer un
+- Adding a test-case → fill in the front-matter (`automated_test` field, or `status: pending`)
+- Adding a test → check it has a matching test-case, otherwise create one
 
 ### Mutation testing
 
-Les tests écrits sans relecture humaine ligne à ligne sont contrôlés par mutation testing. Un test vert n'est pas une preuve : seul un mutant tué l'est.
+Tests written without line-by-line human review are kept in check by mutation testing. A green test is not proof: only a killed mutant is.
 
-- Périmètre et seuils : voir l'invariant correspondant dans [docs/technical/invariants.md](docs/technical/invariants.md)
-- Lancer localement : `bash tools/harness/run_mutation.sh --scope diff`
-- Un mutant survivant se traite en ajoutant un test qui exprime le **comportement** non protégé — jamais un test écrit pour tuer le mutant. Si le mutant ne correspond à aucun comportement qui compte, l'exclure explicitement en config avec un commentaire de justification
-- Ne jamais baisser un seuil pour faire passer la CI : c'est le signal qu'un comportement a perdu sa protection
+- Scope and thresholds: see the matching invariant in [docs/technical/invariants.md](docs/technical/invariants.md)
+- Run locally: `bash tools/harness/run_mutation.sh --scope diff`
+- A surviving mutant is dealt with by adding a test that expresses the unprotected **behavior** — never a test written to kill the mutant. If the mutant matches no behavior that counts, exclude it explicitly in the config with a comment justifying it
+- Never lower a threshold to get CI passing: that is the signal that a behavior has lost its protection
 
 ### Doc-gardening
 
-Une tâche planifiée tourne périodiquement et signale les dérives. Quand le rapport remonte des violations, traiter ça comme un signal d'amélioration du repo (ajouter une doc, préciser un invariant, etc.), pas comme du bruit.
+A scheduled task runs periodically and reports drift. When the report surfaces violations, treat that as a signal to improve the repo (add documentation, sharpen an invariant, and so on), not as noise.
 ```
 
-> Les sous-sections présentes dépendent des briques activées. Si seule la brique B est active, n'inclure que la sous-section « Pont test-cases ↔ tests réels ».
+> Which subsections appear depends on the enabled blocks. If only block B is active, include only the "Test-case bridge to real tests" subsection.
 
-**Coexistence avec `codebase-cartographer`** : la section « Documentation du projet » (générée par cartographer) n'est jamais touchée par ce skill. Si seule la section « Harness » manque, l'ajouter après la section Documentation.
+**Coexistence with `codebase-cartographer`**: the "Project documentation" section (generated by cartographer) is never touched by this skill. If only the "Harness" section is missing, add it after the Documentation section.
 
 ---
 
-## Mode mise à jour (ré-exécution du skill)
+## Update mode (re-running the skill)
 
-Quand le skill détecte qu'il a déjà tourné (présence de `tools/harness/` ou de `docs/technical/invariants.md`), il bascule automatiquement en mode mise à jour.
+When the skill detects that it has already run (presence of `tools/harness/` or of `docs/technical/invariants.md`), it automatically switches to update mode.
 
-### Inventaire
+### Inventory
 
-- Lister les invariants définis (parser `invariants.md`) et leur statut (`actif`, `déprécié`)
-- Lister les scripts dans `tools/harness/` et identifier ceux liés à un invariant
-- Lister les test-cases avec front-matter et noter leur `status`
-- Relever la baseline de mutation et le seuil actuel dans `invariants.md`, et vérifier que la config de l'outil et le wrapper `run_mutation.*` sont toujours en place et cohérents avec la stack
-- Vérifier si une tâche planifiée existe pour ce projet : job planifié en CI (`.github/workflows/`, *Schedules* GitLab), tâche de l'ordonnanceur de l'hôte, ou entrée cron
+- List the defined invariants (parse `invariants.md`) and their status (`active`, `deprecated`)
+- List the scripts in `tools/harness/` and identify the ones tied to an invariant
+- List the test-cases carrying front-matter and note their `status`
+- Record the mutation baseline and the current threshold from `invariants.md`, and check that the tool config and the `run_mutation.*` wrapper are still in place and consistent with the stack
+- Check whether a scheduled task exists for this project: a scheduled CI job (`.github/workflows/`, GitLab *Schedules*), a task in the host's scheduler, or a cron entry
 
-### Exécution des checks
+### Running the checks
 
-L'agent exécute (via bash) tous les scripts de `tools/harness/` et collecte la sortie. Pour chaque invariant :
+The agent runs (through bash) every script in `tools/harness/` and collects the output. For each invariant:
 
-| Résultat | Action |
+| Result | Action |
 |----------|--------|
-| Pass | RAS |
-| Fail nouveau (code passait avant, ne passe plus) | Signaler, proposer remédiation |
-| Fail déjà connu | Rappeler (sans bruit) |
-| Invariant obsolète (la couche/le pattern n'existe plus) | Proposer passage à `déprécié` |
-| Invariant manquant (nouvel ADR sans invariant) | Proposer création |
+| Pass | Nothing to do |
+| New fail (the code used to pass, no longer does) | Report it, propose a remediation |
+| Already known fail | Mention it (without noise) |
+| Obsolete invariant (the layer/pattern no longer exists) | Propose switching it to `deprecated` |
+| Missing invariant (new ADR without an invariant) | Propose creating one |
 
-Pour les test-cases :
+For the test-cases:
 
-| Résultat | Action |
+| Result | Action |
 |----------|--------|
-| `pending` dont le test existe maintenant | Proposer `covered` |
-| `covered_broken` (test disparu ou échoue) | Proposer enquête |
-| Test orphelin (nouveau test sans test-case) | Proposer création du test-case |
+| `pending` whose test now exists | Propose `covered` |
+| `covered_broken` (test gone or failing) | Propose an investigation |
+| Orphan test (new test without a test-case) | Propose creating the test-case |
 
-Pour le mutation testing (si la brique D est installée) :
+For mutation testing (if block D is installed):
 
-| Résultat | Action |
+| Result | Action |
 |----------|--------|
-| Score stable ou en hausse | RAS — proposer un relèvement du seuil si l'écart à la baseline dépasse 5 points |
-| Score en baisse sous le seuil | Signaler, lister les mutants survivants nouveaux, proposer enquête |
-| Nouveau module dans le périmètre critique, non couvert par la config | Proposer extension du périmètre |
-| Run qui dépasse largement sa durée habituelle | Signaler — souvent le signe d'un test lent ajouté, ou d'un périmètre qui a grossi sans qu'on le décide |
+| Score stable or rising | Nothing to do — propose raising the threshold if the gap to the baseline exceeds 5 points |
+| Score falling below the threshold | Report it, list the new surviving mutants, propose an investigation |
+| New module in the critical scope, not covered by the config | Propose extending the scope |
+| Run far exceeding its usual duration | Report it — often the sign of a slow test added, or of a scope that grew without anyone deciding it |
 
-**Ne jamais proposer d'aligner le seuil sur un score en baisse.** Un seuil qu'on abaisse pour repasser au vert transforme un signal en décoration.
+**Never propose aligning the threshold with a falling score.** A threshold lowered to get back to green turns a signal into decoration.
 
-### Rapport consolidé
+### Consolidated report
 
 ```
-## Harness — rapport
+## Harness — report
 
-INVARIANTS (5 actifs)
-  - INV-001 (isolation domaine) : 2 violations nouvelles
-      src/domaine/checkout.py:42 import requests → remédiation: déplacer en application/
-      src/domaine/checkout.py:67 import boto3 → idem
-  - INV-002 à INV-005 : OK
+INVARIANTS (5 active)
+  - INV-001 (domain isolation): 2 new violations
+      src/domain/checkout.py:42 import requests → remediation: move it to application/
+      src/domain/checkout.py:67 import boto3 → same
+  - INV-002 to INV-005: OK
 
-  Candidat à dépréciation :
-  - INV-003 (statut REST JSON) : plus de routes REST dans le code (ADR-0007 a remplacé)
+  Deprecation candidate:
+  - INV-003 (REST JSON status): no REST routes left in the code (ADR-0007 replaced them)
 
-COUVERTURE TEST-CASES (12 fichiers)
-  - 10 covered_ok, 1 pending → 1 covered_ok (un test pending a été implémenté)
-  - 1 covered_broken : panier/suppression-bulk.md → test absent depuis le commit abc1234
+TEST-CASE COVERAGE (12 files)
+  - 10 covered_ok, 1 pending → 1 covered_ok (a pending test has been implemented)
+  - 1 covered_broken: cart/bulk-removal.md → test gone since commit abc1234
 
-MUTATION (périmètre: domaine critique)
-  - score 74.1% (baseline 78.4%, seuil 75%) → SOUS LE SEUIL
-  - 3 mutants survivants nouveaux, tous dans src/domaine/panier/Remise.kt
-      → introduits par la branche feat/remises-cumulables
+MUTATION (scope: critical domain)
+  - score 74.1% (baseline 78.4%, threshold 75%) → BELOW THRESHOLD
+  - 3 new surviving mutants, all in src/domain/cart/Discount.kt
+      → introduced by branch feat/stackable-discounts
 
 DOC-GARDENING
-  - Tâche planifiée active (hebdo lundi 9h) — dernier run il y a 3 jours, OK
+  - Scheduled task active (weekly, Monday 9am) — last run 3 days ago, OK
 ```
 
-QCM consolidé pour valider l'ensemble des actions proposées.
+Consolidated multiple-choice question to approve the whole set of proposed actions.
 
-### Si rien n'a changé
+### If nothing has changed
 
-Si tous les checks passent et qu'il n'y a aucun delta, l'agent dit simplement « Harness OK, rien à faire » et termine. Pas de tool call superflu.
-
----
-
-## Conseils transverses
-
-**Démarrer petit**. Ne pas essayer de rendre exécutables 20 règles d'un coup. Commencer par 2-3 invariants qui font vraiment mal quand ils sont violés (ex : couche isolée, secret en clair, console.log en prod). Étendre ensuite.
-
-**Sévérité `warn` au démarrage**. Un linter qui passe en `error` sur du code existant non-conforme va bloquer toute l'équipe. Recommander `warn` pendant 1-2 semaines, le temps de nettoyer les violations existantes, puis passer à `error`.
-
-**Messages d'erreur actionnables**. C'est la règle d'or. Un message qui dit « unauthorized import » est inutile pour un agent. Un message qui dit « déplace ce import vers `src/application/` et expose un port côté domaine — voir INV-001 » est utilisable. Tous les starters fournis suivent cette règle.
-
-**Pas d'auto-fix silencieux**. Même si l'agent est sûr qu'il sait corriger une violation, il ne le fait jamais sans QCM. Le harness produit un signal ; l'humain ou l'agent applique le fix dans un commit visible.
-
-**Boucle de feedback**. Quand un agent bute sur un invariant, traiter ça comme un signal : la remédiation est-elle assez claire ? l'invariant est-il trop strict ? la doc manque-t-elle d'un exemple ? Mettre à jour `invariants.md` et le message d'erreur du linter en conséquence. C'est ce qui fait évoluer le harness avec le projet.
-
-**Garde la confiance**. Un harness qui produit trop de faux positifs sera ignoré. Si une règle déclenche systématiquement des faux positifs, c'est un bug du linter, pas du code. Corriger le linter en priorité.
-
-**Le coût d'exécution est une contrainte de conception, pas un détail**. Un check juste mais trop lent finit désactivé, ce qui est pire qu'un check absent — il laisse croire à une protection qui n'existe plus. Pour la brique D en particulier : mieux vaut un mutation testing exigeant sur 15 % du code, qui tourne vraiment, qu'un run global que l'équipe met en `continue-on-error` et cesse de lire.
-
-**Ne jamais empiler par réflexe**. Toutes les briques ne se justifient pas sur tous les projets. Un utilitaire interne sans enjeu de fiabilité n'a pas besoin de mutation testing ; un moteur de calcul de facturation en a besoin plus que de doc-gardening. Quand l'utilisateur active tout par défaut, poser la question de la criticité réelle avant d'installer.
-
-**Ce qui n'est plus relu doit être davantage vérifié**. Quand un projet bascule vers un mode où les agents écrivent le code et les tests unitaires sans relecture ligne à ligne, ce n'est pas le moment d'alléger le harness — c'est le moment où il devient la seule protection restante. Le signal à surveiller : si les invariants sont en `warn` depuis des mois et que personne ne lit les rapports, la protection est nominale.
+If every check passes and there is no delta, the agent simply says "Harness OK, nothing to do" and stops. No superfluous tool call.
 
 ---
 
-## Référence
+## Cross-cutting advice
 
-- `references/block-a-invariants.md`, `-b-test-case-bridge`, `-c-doc-gardening`, `-d-mutation` — la procédure détaillée de chaque brique. Ne lire que celles retenues au QCM de scoping : c'est tout l'intérêt du découpage
-- `references/templates.md` — six sections : (1) `invariants.md` et ses règles de rédaction, (2) front-matter des test-cases, (3) entrée type d'un seuil de mutation avec baseline, (4) prompt de la tâche planifiée, (5) section Harness d'`AGENTS.md`, (6) conventions d'écriture des scripts et règle d'or des messages
-- `references/harness-starters/` — implémentations de référence. Contient `README.md` (le contrat commun à tous les scripts) et `check_test_coverage.py` (brique B, complet et générique). Volontairement dépourvu de linters par stack : le skill les génère à partir des conventions, ce qui vieillit moins vite qu'un dossier figé
-- `references/harness-starters/mutation/` — optionnel. La brique D **génère** son wrapper et sa config à partir de la stack détectée (voir `references/block-d-mutation.md`, sections 5.3.a et 5.3.b) ; ce dossier ne sert qu'à figer des exemples déjà éprouvés en interne, jamais de source de vérité. Le contrat de sortie normalisée décrit en 5.3.b de ce fichier prime sur tout starter qui s'en écarterait.
+**Start small**. Do not try to make 20 rules executable at once. Start with 2-3 invariants that really hurt when they are violated (e.g. an isolated layer, a secret in clear text, a console.log in production). Extend afterwards.
+
+**Severity `warn` at first**. A linter set to `error` on existing non-compliant code will block the whole team. Recommend `warn` for 1-2 weeks, long enough to clean up the existing violations, then switch to `error`.
+
+**Actionable error messages**. This is the golden rule. A message saying "unauthorized import" is useless to an agent. A message saying "move this import to `src/application/` and expose a port on the domain side — see INV-001" is usable. Every starter provided follows this rule.
+
+**No silent auto-fix**. Even when the agent is sure it knows how to fix a violation, it never does so without a multiple-choice question. The harness produces a signal; the human or the agent applies the fix in a visible commit.
+
+**Feedback loop**. When an agent trips over an invariant, treat it as a signal: is the remediation clear enough? is the invariant too strict? is the documentation missing an example? Update `invariants.md` and the linter's error message accordingly. That is what makes the harness evolve with the project.
+
+**Keep the trust**. A harness that produces too many false positives will be ignored. If a rule fires false positives over and over, that is a bug in the linter, not in the code. Fix the linter first.
+
+**Run cost is a design constraint, not a detail**. A check that is right but too slow ends up disabled, which is worse than no check at all — it suggests a protection that no longer exists. For block D in particular: a demanding mutation testing run over 15% of the code that really runs beats a global run the team sets to `continue-on-error` and stops reading.
+
+**Never stack by reflex**. Not every block is justified on every project. An internal utility with no reliability stakes does not need mutation testing; a billing calculation engine needs it more than it needs doc-gardening. When the user enables everything by default, ask about the real criticality before installing.
+
+**What is no longer reviewed must be verified more**. When a project shifts to a mode where the agents write the code and the unit tests without line-by-line review, this is not the time to lighten the harness — this is the moment it becomes the only protection left. The signal to watch: if the invariants have been on `warn` for months and nobody reads the reports, the protection is nominal.
+
+---
+
+## Reference
+
+- `references/block-a-invariants.md`, `-b-test-case-bridge`, `-c-doc-gardening`, `-d-mutation` — the detailed procedure for each block. Read only the ones kept at the scoping question: that is the whole point of the split
+- `references/templates.md` — six sections: (1) `invariants.md` and its writing rules, (2) test-case front-matter, (3) a typical mutation threshold entry with its baseline, (4) the scheduled task prompt, (5) the Harness section of `AGENTS.md`, (6) script writing conventions and the golden rule for messages
+- `references/harness-starters/` — reference implementations. Contains `README.md` (the contract shared by every script) and `check_test_coverage.py` (block B, complete and generic). Deliberately free of per-stack linters: the skill generates those from the conventions, which ages better than a frozen directory
+- `references/harness-starters/mutation/` — optional. Block D **generates** its wrapper and its config from the detected stack (see `references/block-d-mutation.md`, sections 5.3.a and 5.3.b); this directory only freezes examples already proven internally, never a source of truth. The normalized output contract described in 5.3.b of that file takes precedence over any starter that departs from it.

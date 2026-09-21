@@ -1,6 +1,6 @@
-# Templates des fichiers de documentation
+# Documentation file templates
 
-Ce fichier est consulté par l'agent au moment de générer chacun des 7 fichiers. Il contient pour chaque fichier : (1) la structure attendue, (2) des questions QCM types à poser à l'utilisateur en phase de validation.
+The agent reads this file when it is about to generate each of the 7 files. For every file it holds: (1) the expected structure, (2) typical multiple-choice questions to ask the user during the validation phase.
 
 ---
 
@@ -9,24 +9,24 @@ Ce fichier est consulté par l'agent au moment de générer chacun des 7 fichier
 ### Structure
 
 ```markdown
-# Glossaire métier
+# Business glossary
 
-Vocabulaire du domaine. Chaque terme est défini une seule fois ici et référencé depuis les autres docs.
+Domain vocabulary. Each term is defined once here and referenced from the other docs.
 
-## [Terme A]
-Définition courte (1-3 phrases). Si pertinent, exemple concret entre parenthèses.
+## [Term A]
+Short definition (1-3 sentences). Where useful, a concrete example in parentheses.
 
-## [Terme B]
+## [Term B]
 ...
 ```
 
-Ordre : alphabétique. Pas plus de 3 phrases par entrée. Si une définition demande plus, c'est probablement une feature, pas un terme.
+Order: alphabetical. No more than 3 sentences per entry. If a definition needs more, it is probably a feature, not a term.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "J'ai identifié ces termes métier candidats : [liste]. Lesquels garder ?"
-- "Le terme X : je vois deux usages possibles dans le code — [A] ou [B] ?"
-- "Manque-t-il des termes importants que je n'ai pas vus dans le code ?"
+- "I identified these candidate business terms: [list]. Which ones do we keep?"
+- "The term X: I see two possible uses in the code — [A] or [B]?"
+- "Are any important terms missing that I did not see in the code?"
 
 ---
 
@@ -35,97 +35,97 @@ Ordre : alphabétique. Pas plus de 3 phrases par entrée. Si une définition dem
 ### Structure
 
 ```markdown
-# Features core
+# Core features
 
-Fonctionnalités principales du produit, du point de vue utilisateur.
+The product's main capabilities, from the user's point of view.
 
-## [Feature 1 : nom court]
+## [Feature 1: short name]
 
-**Description** : Une à trois phrases sur ce que la feature permet de faire.
+**Description**: One to three sentences on what the feature lets you do.
 
-**Utilisateurs concernés** : [rôles / personae]
+**Users concerned**: [roles / personas]
 
-**Parcours principal** :
+**Main journey**:
 1. ...
 2. ...
 
-**Règles métier clés** :
+**Key business rules**:
 - ...
 
-## [Feature 2 : nom court]
+## [Feature 2: short name]
 ...
 ```
 
-Une feature = une capacité utilisateur, pas un endpoint technique. Si l'agent hésite, c'est probablement de l'architecture, pas une feature.
+A feature is a user capability, not a technical endpoint. If the agent hesitates, it is probably architecture, not a feature.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "J'ai identifié ces features : [liste]. Laquelle est la feature principale ?"
-- "La feature X concerne quels utilisateurs : [A] / [B] / les deux ?"
-- "Y a-t-il des features en cours de dev ou prévues à documenter, ou seulement l'existant ?"
+- "I identified these features: [list]. Which one is the main feature?"
+- "Which users does feature X concern: [A] / [B] / both?"
+- "Are there features in progress or planned that should be documented, or only what exists today?"
 
 ---
 
-## 3. `docs/business/test-cases/[feature]/[nom].md` (un fichier par test case)
+## 3. `docs/business/test-cases/[feature]/[name].md` (one file per test case)
 
-### Sources à parcourir
+### Sources to go through
 
-Pour identifier les test cases candidats, l'agent inspecte dans cet ordre :
+To identify candidate test cases, the agent inspects, in this order:
 
-1. **Tests existants dans le code** : fichiers `*_test.*`, `*.spec.*`, dossier `tests/`, `__tests__/`, `spec/`, etc. Chaque test unitaire ou d'intégration métier devient un candidat.
-2. **Controllers / endpoints / handlers** : routes HTTP, handlers d'événements, commandes CLI. Chaque endpoint suggère au moins un cas nominal + cas d'erreur.
-3. **Features métier déjà documentées** dans `core-features.md` : pour chaque feature, déduire les scénarios principaux non couverts par les deux sources précédentes.
+1. **Existing tests in the code**: `*_test.*` and `*.spec.*` files, the `tests/`, `__tests__/`, `spec/` folders, etc. Every unit or business integration test becomes a candidate.
+2. **Controllers / endpoints / handlers**: HTTP routes, event handlers, CLI commands. Every endpoint suggests at least one nominal case plus an error case.
+3. **Business features already documented** in `core-features.md`: for each feature, derive the main scenarios not covered by the two previous sources.
 
-L'agent consolide la liste, dédoublonne, et présente un récapitulatif à l'utilisateur en QCM AVANT d'écrire les fichiers.
+The agent consolidates the list, removes duplicates, and presents a recap to the user as multiple-choice questions BEFORE writing the files.
 
-### Organisation
+### Organization
 
-Un fichier `.md` par test case, groupé par feature dans un sous-dossier :
+One `.md` file per test case, grouped by feature in a subfolder:
 
 ```
 docs/business/test-cases/
-├── authentification/
-│   ├── connexion-reussie.md
-│   ├── connexion-mot-de-passe-invalide.md
-│   └── connexion-compte-bloque.md
-├── panier/
-│   ├── ajout-produit.md
+├── authentication/
+│   ├── login-succeeds.md
+│   ├── login-invalid-password.md
+│   └── login-locked-account.md
+├── cart/
+│   ├── add-product.md
 │   └── ...
 └── ...
 ```
 
-Convention de nommage : kebab-case, descriptif, sans préfixe numérique (l'ordre n'a pas de sens métier).
+Naming convention: kebab-case, descriptive, no numeric prefix (the ordering carries no business meaning).
 
-### Structure d'un fichier test case
+### Structure of a test case file
 
 ```markdown
-# [Titre clair en une phrase]
+# [Clear one-sentence title]
 
-**Feature** : [nom de la feature, lien vers core-features.md#feature]
-**Type** : nominal / cas d'erreur / edge case
-**Priorité** : critique / importante / nice-to-have
+**Feature**: [feature name, link to core-features.md#feature]
+**Type**: nominal / error case / edge case
+**Priority**: critical / important / nice-to-have
 
-## Contexte
-État du système et préconditions avant le test. Acteurs concernés. Données initiales.
+## Context
+System state and preconditions before the test. Actors involved. Initial data.
 
 ## Action
-Ce que l'utilisateur (ou le système amont) déclenche. Une action principale, claire.
+What the user (or the upstream system) triggers. One clear main action.
 
-## Résultat attendu
-Ce qui doit se produire. État final du système, retour côté utilisateur, effets de bord observables.
+## Expected result
+What must happen. Final system state, what the user gets back, observable side effects.
 
-## Notes (optionnel)
-- Test automatisé existant : `chemin/vers/test.py::test_xxx` (si applicable)
-- Endpoint concerné : `POST /api/...` (si applicable)
-- Cas liés : [lien vers autres TC]
+## Notes (optional)
+- Existing automated test: `path/to/test.py::test_xxx` (if applicable)
+- Endpoint involved: `POST /api/...` (if applicable)
+- Related cases: [link to other TCs]
 ```
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "J'ai trouvé [N] tests dans le code et [M] endpoints. Je propose ces [X] test cases (liste). Lesquels garder ?"
-- "Pour la feature [X], j'ai trouvé seulement des cas nominaux dans le code. Veux-tu que je propose aussi des cas d'erreur ?"
-- "Niveau de granularité : un TC par scénario distinct (verbeux) / regrouper les variantes proches dans un seul TC (compact) ?"
-- "Inclure le mapping vers les tests automatisés existants dans le champ Notes ?"
+- "I found [N] tests in the code and [M] endpoints. I propose these [X] test cases (list). Which ones do we keep?"
+- "For feature [X], I only found nominal cases in the code. Do you want me to propose error cases as well?"
+- "Granularity: one TC per distinct scenario (verbose) / group close variants into a single TC (compact)?"
+- "Include the mapping to the existing automated tests in the Notes field?"
 
 ---
 
@@ -136,36 +136,36 @@ Ce qui doit se produire. État final du système, retour côté utilisateur, eff
 ```markdown
 # Architecture
 
-## Vue d'ensemble
+## Overview
 
-Schéma (ASCII ou mermaid) + 2-3 paragraphes d'explication.
+Diagram (ASCII or mermaid) + 2-3 paragraphs of explanation.
 
-## Composants
+## Components
 
-### [Composant 1]
-- **Rôle** : ...
-- **Technologies clés** : [voir tech-stack.md]
-- **Interfaces** : (avec qui il parle, comment)
+### [Component 1]
+- **Role**: ...
+- **Key technologies**: [see tech-stack.md]
+- **Interfaces**: (who it talks to, how)
 
-### [Composant 2]
+### [Component 2]
 ...
 
-## Flux principaux
+## Main flows
 
-Pour les 2-3 flux les plus structurants, expliquer le cheminement entre composants.
+For the 2-3 most structural flows, walk through the path between components.
 
-## Données
+## Data
 
-Si pertinent : modèle de données simplifié, sources externes, persistance.
+Where relevant: simplified data model, external sources, persistence.
 ```
 
-Pas de copier-coller de tech-stack.md ici. Mentionner les techs UNIQUEMENT quand elles sont structurantes pour l'architecture.
+No copy-paste of tech-stack.md here. Mention technologies ONLY when they are structural for the architecture.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "L'architecture est plutôt : monolithe / microservices / serverless / hybride ?"
-- "Le format de diagramme préféré : ASCII art / mermaid / lien vers un fichier externe ?"
-- "Quels sont les 2-3 flux les plus critiques à documenter ?"
+- "The architecture is rather: monolith / microservices / serverless / hybrid?"
+- "Preferred diagram format: ASCII art / mermaid / link to an external file?"
+- "Which 2-3 flows are the most critical to document?"
 
 ---
 
@@ -174,35 +174,35 @@ Pas de copier-coller de tech-stack.md ici. Mentionner les techs UNIQUEMENT quand
 ### Structure
 
 ```markdown
-# Stack technique
+# Tech stack
 
-## Langages & runtimes
+## Languages & runtimes
 - ...
 
-## Frameworks & libs principales
-- **[Nom]** (version) — rôle dans le projet
+## Main frameworks & libraries
+- **[Name]** (version) — role in the project
 
-## Base de données / persistance
+## Database / persistence
 - ...
 
-## Infrastructure & déploiement
+## Infrastructure & deployment
 - ...
 
-## Outils de dev
-- Tests : ...
-- Lint / format : ...
-- CI/CD : ...
+## Dev tooling
+- Tests: ...
+- Lint / format: ...
+- CI/CD: ...
 
-## Services externes
+## External services
 - ...
 ```
 
-Versions importantes uniquement (langage, framework majeur, DB). Pas la peine de lister toutes les sous-deps.
+Only the versions that matter (language, major framework, DB). No need to list every sub-dependency.
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "Pour les versions, je liste : tout / juste les majeures / juste si critique pour la compat ?"
-- "Inclure les outils de dev personnels (IDE config, etc.) ou seulement la stack partagée ?"
+- "For versions, do I list: all of them / only the majors / only when critical for compatibility?"
+- "Include personal dev tooling (IDE config, etc.) or only the shared stack?"
 
 ---
 
@@ -211,113 +211,113 @@ Versions importantes uniquement (langage, framework majeur, DB). Pas la peine de
 ### Structure
 
 ```markdown
-# Stratégie de test
+# Test strategy
 
-## Pyramide / philosophie
-Décrire le type de pyramide utilisée (classique, trophée, ice-cream, etc.) et pourquoi.
+## Pyramid / philosophy
+Describe the kind of pyramid in use (classic, trophy, ice-cream, etc.) and why.
 
-## Types de tests
-- **Unitaires** : framework, conventions de nommage, où ils vivent, couverture cible
-- **Intégration** : ...
-- **End-to-end** : ...
-- **Autres** (perf, sécurité, accessibilité) : ...
+## Types of tests
+- **Unit**: framework, naming conventions, where they live, coverage target
+- **Integration**: ...
+- **End-to-end**: ...
+- **Others** (perf, security, accessibility): ...
 
 ## Conventions
-- Structure d'un test (AAA, Given/When/Then en code, etc.)
-- Fixtures & mocks : approche
-- Nommage des fichiers et fonctions de test
+- Shape of a test (AAA, Given/When/Then in code, etc.)
+- Fixtures & mocks: the approach
+- Naming of test files and test functions
 
-## Exécution
-- Commandes locales
-- Exécution en CI
-- Critères de merge (couverture min, tests qui doivent passer)
+## Running them
+- Local commands
+- Running in CI
+- Merge criteria (minimum coverage, tests that must pass)
 ```
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "Quel type de pyramide : classique (beaucoup d'unitaires) / trophée (beaucoup d'intégration) / autre ?"
-- "Couverture cible globale : [valeur] / pas de cible chiffrée / définie par type de test ?"
-- "Les tests E2E sont : existants / à mettre en place / pas prévus ?"
+- "Which kind of pyramid: classic (lots of unit tests) / trophy (lots of integration) / other?"
+- "Overall coverage target: [value] / no numeric target / defined per test type?"
+- "E2E tests are: already there / to be set up / not planned?"
 
 ---
 
 ## 7. `docs/technical/adr.md` + `docs/technical/adr/`
 
-### Sources à parcourir AVANT le QCM
+### Sources to go through BEFORE the questions
 
-Pour proposer des ADR candidats, l'agent analyse :
+To propose candidate ADRs, the agent analyzes:
 
-1. **Le code** : choix techniques structurants détectables (framework choisi, pattern d'architecture, choix de DB, approche d'authentification, gestion d'état, stratégie de cache, etc.)
-2. **L'historique git** (si disponible) :
-   - `git log --oneline` pour repérer les commits qui parlent de migration, refactor, choix, décision, switch, replace, introduce, remove
-   - `git log --all --grep="ADR\|decision\|migrat\|refactor\|switch\|replace"` pour les commits explicites
-   - Tags et branches qui signalent des changements majeurs
-   - Fichiers supprimés ou renommés en masse (signal de refactor structurant)
-3. **Les fichiers de configuration** : `package.json` (deps majeures retirées/ajoutées), `Dockerfile` (base image switchée), config CI/CD (changements de pipeline)
+1. **The code**: detectable structural technical choices (chosen framework, architecture pattern, DB choice, authentication approach, state management, caching strategy, etc.)
+2. **The git history** (when available):
+   - `git log --oneline` to spot commits that mention migration, refactor, choice, decision, switch, replace, introduce, remove
+   - `git log --all --grep="ADR\|decision\|migrat\|refactor\|switch\|replace"` for the explicit ones
+   - Tags and branches that signal major changes
+   - Files deleted or renamed en masse (the signature of a structural refactor)
+3. **The configuration files**: `package.json` (major deps added/removed), `Dockerfile` (base image switched), CI/CD config (pipeline changes)
 
-L'agent consolide une liste de **décisions candidates** (5-15 entrées max), avec pour chacune :
-- Le nom court de la décision
-- L'indice qui l'a fait remonter (commit, code, etc.)
-- Le niveau d'évidence (claire / probable / hypothétique)
+The agent consolidates a list of **candidate decisions** (5-15 entries max), each with:
+- The short name of the decision
+- The clue that surfaced it (commit, code, etc.)
+- The level of evidence (clear / likely / speculative)
 
-Cette liste est présentée à l'utilisateur en QCM pour qu'il sélectionne les vraies décisions à formaliser.
+That list is presented to the user as a multiple-choice question so they can select the real decisions to formalize.
 
-### Structure de `adr.md` (index)
+### Structure of `adr.md` (index)
 
 ```markdown
 # Architecture Decision Records
 
-Décisions structurantes du projet. Chaque ADR est un fichier numéroté dans `adr/`.
+The project's structural decisions. Each ADR is a numbered file under `adr/`.
 
 ## Format
 
-Utiliser le template `adr/0000-template.md` pour créer un nouvel ADR.
+Use the `adr/0000-template.md` template to create a new ADR.
 
 ## Index
 
-- [ADR-0001 : Titre](adr/0001-titre.md) — statut : accepté
-- [ADR-0002 : Titre](adr/0002-titre.md) — statut : proposé
+- [ADR-0001: Title](adr/0001-title.md) — status: accepted
+- [ADR-0002: Title](adr/0002-title.md) — status: proposed
 ```
 
-### Structure d'un ADR individuel (`adr/NNNN-titre.md`)
+### Structure of an individual ADR (`adr/NNNN-title.md`)
 
 ```markdown
-# ADR-NNNN : [Titre]
+# ADR-NNNN: [Title]
 
-**Statut** : proposé / accepté / déprécié / remplacé par ADR-XXXX
-**Date** : YYYY-MM-DD
-**Source** : (optionnel) commit abc1234, ou "reconstitué a posteriori"
+**Status**: proposed / accepted / deprecated / superseded by ADR-XXXX
+**Date**: YYYY-MM-DD
+**Source**: (optional) commit abc1234, or "reconstructed after the fact"
 
-## Contexte
-Quel problème, quelles contraintes ?
+## Context
+Which problem, which constraints?
 
-## Décision
-Ce qui a été décidé, en une à trois phrases claires.
+## Decision
+What was decided, in one to three clear sentences.
 
-## Conséquences
-- Positives : ...
-- Négatives / coûts : ...
-- Risques : ...
+## Consequences
+- Upsides: ...
+- Downsides / costs: ...
+- Risks: ...
 
-## Alternatives considérées
-- [Option A] — rejetée parce que ...
-- [Option B] — rejetée parce que ...
+## Alternatives considered
+- [Option A] — rejected because ...
+- [Option B] — rejected because ...
 ```
 
-### Questions QCM types
+### Typical multiple-choice questions
 
-- "J'ai détecté ces décisions candidates dans le code et l'historique git : [liste avec niveau d'évidence]. Lesquelles formaliser en ADR ?"
-- "Pour la décision X (évidence : probable), je manque de contexte sur le pourquoi. Tu peux préciser : [option A] / [option B] / je détaille en texte libre ?"
-- "Y a-t-il des décisions importantes que je n'ai pas détectées et que tu veux ajouter ?"
-- "Pour les ADR reconstitués, indiquer clairement 'reconstitué a posteriori' dans le champ Source ?"
+- "I detected these candidate decisions in the code and the git history: [list with level of evidence]. Which ones do we formalize as ADRs?"
+- "For decision X (evidence: likely), I am missing context on the why. Can you clarify: [option A] / [option B] / I will write it out freely?"
+- "Are there important decisions I did not detect that you want to add?"
+- "For reconstructed ADRs, should the Source field say 'reconstructed after the fact' explicitly?"
 
-**Important** :
-- Ne JAMAIS écrire un ADR sans validation utilisateur, même si l'évidence semble forte
-- Si l'utilisateur n'a aucune décision à formaliser, créer uniquement `adr.md` (index vide) + `adr/0000-template.md` pour les futurs ADR
-- Pour les décisions reconstituées (sans contexte git clair), marquer la Source comme "reconstitué a posteriori" pour la transparence
+**Important**:
+- NEVER write an ADR without user validation, even when the evidence looks strong
+- If the user has no decision to formalize, create only `adr.md` (an empty index) plus `adr/0000-template.md` for future ADRs
+- For reconstructed decisions (no clear git context), mark the Source as "reconstructed after the fact", for transparency
 
 ---
 
-## Notes générales sur la phase QCM
+## General notes on the question phase
 
-La doctrine de validation par QCM — mécanisme selon l'agent hôte, structure d'un round, rédaction des questions, cas particuliers — vit dans le skill `clarify-with-choices`. Les templates ci-dessus fixent *ce qu'on demande* ; `clarify-with-choices` fixe *comment on le demande*.
+The doctrine of validation through multiple-choice questions — the mechanism depending on the host agent, the shape of a round, how to word questions, edge cases — lives in the `clarify-with-choices` skill. The templates above fix *what we ask*; `clarify-with-choices` fixes *how we ask it*.

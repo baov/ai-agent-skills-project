@@ -1,115 +1,115 @@
 ---
 name: ai-code-remediation
-description: Audit à froid d'un codebase majoritairement généré par IA, suivi d'un plan de remédiation priorisé selon une doctrine stricte (TDD, méthode Mikado, micro-itérativité). À utiliser SYSTÉMATIQUEMENT quand l'utilisateur demande d'"auditer ce codebase", "évaluer la dette de ce projet généré par IA", "remettre d'aplomb un projet vibe-codé", "diagnostiquer ce que les agents ont produit", "plan de remédiation", "assainir ce code", ou exprime un doute sur la qualité d'un projet écrit en grande partie par des agents — même sans employer le mot "audit". Couvre 8 catégories de symptômes typiques du code généré par IA. Ne pas confondre avec premerge-review (revue d'un diff avant merge, pas d'un codebase entier) ni avec codebase-cartographer (documentation, pas diagnostic). Peut invoquer ddd-advisor quand les symptômes relèvent de la conception du domaine.
+description: Cold audit of a codebase written mostly by AI, followed by a remediation plan prioritized under a strict doctrine (TDD, Mikado method, micro-iteration). Use it SYSTEMATICALLY when the user asks to "audit this codebase", "size up the debt in this AI-generated project", "clean up a vibe-coded project", "figure out what the agents produced", "remediation plan", "clean up this code", or doubts the quality of a project written largely by agents — even when the word "audit" never comes up. Covers 8 categories of symptoms typical of AI-generated code. Do not confuse it with premerge-review (a diff before merge, not a whole codebase) or with codebase-cartographer (documentation, not diagnosis). May invoke ddd-advisor when the symptoms are really about domain design.
 ---
 
 # AI Code Remediation
 
-Audit à froid d'un codebase produit en grande partie par des agents IA, puis plan de remédiation discipliné. L'objectif n'est pas de juger le code mais de le rendre maintenable : identifier les symptômes, prouver leur réalité, et organiser leur résorption sans big-bang.
+Cold audit of a codebase produced largely by AI agents, then a disciplined remediation plan. The goal is not to pass judgement on the code but to make it maintainable: name the symptoms, prove they are real, and organize their removal without a big bang.
 
-**Principe cardinal : l'audit est en lecture seule.** Ne jamais corriger pendant l'audit, même un défaut trivial — corriger au fil de l'eau détruit la vision d'ensemble et mélange diagnostic et traitement. La remédiation vient après, plan en main, et son exécution est déléguée à `plan-driven-dev`.
+**Cardinal rule: the audit is read-only.** Never fix anything while auditing, not even a trivial defect — fixing as you go destroys the overall picture and blends diagnosis into treatment. Remediation comes afterwards, plan in hand, and its execution is delegated to `plan-driven-dev`.
 
-## La doctrine de remédiation
+## The remediation doctrine
 
-Toute la remédiation obéit à trois disciplines, non négociables :
+All remediation obeys three disciplines, none of them negotiable:
 
-1. **TDD orienté comportement** — aucun refactoring sans filet. Si le code à remédier n'est pas testé (cas fréquent du code généré), commencer par des tests de caractérisation qui capturent le comportement actuel, même imparfait. S'appuyer sur le skill `behavior-driven-testing` pour la stratégie : tester des comportements, pas des classes.
-2. **Méthode Mikado** — chaque objectif de remédiation est décomposé en graphe de prérequis. On tente le changement ; s'il casse, on note ce qui manque, on revert, et on s'attaque d'abord aux feuilles du graphe. Jamais de chantier ouvert qui ne compile pas.
-3. **Micro-itérativité** — des pas si petits qu'ils paraissent ridicules : chaque étape laisse le codebase au vert, committable, livrable. Un refactoring qu'on ne peut pas interrompre à tout moment est un refactoring mal découpé.
+1. **Behavior-driven TDD** — no refactoring without a safety net. When the code to remediate has no tests (the usual case for generated code), start with characterization tests that capture the current behavior, flaws and all. Lean on the `behavior-driven-testing` skill for the strategy: test behaviors, not classes.
+2. **Mikado method** — every remediation goal is broken down into a graph of prerequisites. Attempt the change; when it breaks, write down what is missing, revert, and go after the leaves of the graph first. Never leave an open worksite that does not compile.
+3. **Micro-iteration** — steps so small they look ridiculous: each one leaves the codebase green, committable, shippable. A refactoring you cannot stop at any moment is a badly sliced refactoring.
 
-## Phase 0 — Cadrage
+## Phase 0 — Scoping
 
-1. Établir le périmètre : tout le repo, ou un sous-ensemble (module, service) ? Sur un gros codebase (>~50k lignes), proposer de découper l'audit par zone plutôt que de tout survoler.
-2. Recueillir le contexte minimal auprès de l'utilisateur : quelle proportion du code est générée, depuis quand, quels sont les irritants déjà ressentis (bugs récurrents, peur de toucher certaines zones, builds lents) ? Les irritants vécus orientent la priorisation finale.
-3. Inventorier les référentiels disponibles : `AGENTS.md`, `docs/technical/` (ADR, architecture), `docs/business/` (glossaire, test-cases), `docs/technical/invariants.md` et `tools/harness/`. **Mode dégradé** : leur absence n'empêche pas l'audit, mais elle est elle-même un finding — un codebase généré sans référentiel dérive plus vite.
+1. Set the scope: the whole repo, or a subset (a module, a service)? On a large codebase (>~50k lines), offer to split the audit by area rather than skim everything.
+2. Collect the minimum context from the user — ask in the language of the project: how much of the code is generated, since when, what already hurts (recurring bugs, areas nobody dares touch, slow builds)? Lived pain drives the final prioritization.
+3. Take stock of the available reference material: `AGENTS.md`, `docs/technical/` (ADRs, architecture), `docs/business/` (glossary, test cases), `docs/technical/invariants.md` and `tools/harness/`. **Degraded mode**: their absence does not block the audit, but it is a finding in itself — a generated codebase with no reference material drifts faster.
 
-## Phase 1 — Collecte des signaux
+## Phase 1 — Gathering signals
 
-Avant l'analyse fine, mesurer ce qui se mesure. Objectiver d'abord, interpréter ensuite.
+Before any fine-grained analysis, measure whatever can be measured. Get the facts first, interpret second.
 
-- **Structure** : taille par module, profondeur des arborescences, fichiers anormalement longs.
-- **Duplication** : détecteur de clones si disponible (jscpd, PMD/CPD, simian), sinon échantillonnage manuel ciblé.
-- **Tests** : ratio tests/code, mais surtout lecture qualitative d'un échantillon — que vérifient les assertions ?
-- **Score de mutation sur échantillon**, si et seulement si trois conditions sont réunies : la suite est verte, un outil de mutation existe pour la stack, et un module porteur de règles métier peut être isolé. Un run sur ce seul module suffit — l'objectif est un ordre de grandeur, pas une mesure exhaustive. Noter le score, le périmètre et la durée. Si l'une des conditions manque, ne pas insister : c'est un signal en plus, jamais un prérequis de l'audit.
-- **Historique git** : rythme et taille des commits, messages génériques en rafale ("fix", "update"), fichiers réécrits plusieurs fois en boucle — signatures typiques de sessions agentiques non supervisées.
-- **Dépendances** : manifestes (package.json, pom.xml…), dépendances inutilisées ou redondantes (trois libs HTTP, deux frameworks de mock).
+- **Structure**: size per module, depth of the directory trees, abnormally long files.
+- **Duplication**: a clone detector when one is available (jscpd, PMD/CPD, simian), otherwise targeted manual sampling.
+- **Tests**: test-to-code ratio, but above all a qualitative read of a sample — what do the assertions actually check?
+- **Mutation score on a sample**, if and only if three conditions hold: the suite is green, a mutation tool exists for the stack, and a module carrying business rules can be isolated. A run on that single module is enough — the point is an order of magnitude, not an exhaustive measurement. Record the score, the scope and the runtime. If any condition is missing, do not push: this is one signal more, never a prerequisite of the audit.
+- **Git history**: commit rhythm and size, bursts of generic messages ("fix", "update"), files rewritten over and over in a loop — the usual signatures of unsupervised agent sessions.
+- **Dependencies**: manifests (package.json, pom.xml...), unused or redundant dependencies (three HTTP libraries, two mocking frameworks).
 
-## Phase 2 — Analyse par symptômes
+## Phase 2 — Symptom-by-symptom analysis
 
-Parcourir le codebase avec huit lectures ciblées. Comme pour une revue, une passe unique qui "regarde tout" rate l'essentiel ; chaque catégorie a sa question.
+Go through the codebase with eight targeted readings. As in a review, a single pass that "looks at everything" misses what matters; each category comes with its own question.
 
-### S1 — Duplication systémique
-*Le même savoir est-il écrit plusieurs fois ?* Le code généré duplique au lieu de factoriser, car chaque session de génération repart de zéro. Chercher les clones exacts, mais aussi les clones sémantiques : trois validateurs d'email, deux clients HTTP maison.
+### S1 — Systemic duplication
+*Is the same knowledge written down several times?* Generated code duplicates instead of factoring out, because every generation session starts from scratch. Look for exact clones, but also for semantic ones: three email validators, two home-grown HTTP clients.
 
-### S2 — Sur-abstraction et over-engineering
-*Y a-t-il des couches que rien ne justifie ?* Interfaces à implémentation unique, patterns plaqués (factory de factory, stratégie à un seul cas), généricité spéculative. L'IA reproduit des patterns "best practice" hors de tout besoin réel.
+### S2 — Over-abstraction and over-engineering
+*Are there layers nothing justifies?* Interfaces with a single implementation, patterns pasted on (a factory of factories, a strategy with one case), speculative genericity. AI reproduces "best practice" patterns with no real need behind them.
 
-### S3 — Tests cosmétiques
-*Les tests détecteraient-ils une régression réelle ?* Coverage élevé mais assertions creuses, tests qui vérifient des mocks, mapping mécanique 1 test ↔ 1 classe, happy path uniquement. Confronter au skill `behavior-driven-testing`. Test décisif : muter une règle métier — un test rougit-il ?
+### S3 — Cosmetic tests
+*Would the tests catch a real regression?* High coverage but hollow assertions, tests that verify mocks, a mechanical 1 test ↔ 1 class mapping, happy path only. Check against the `behavior-driven-testing` skill. The decisive test: mutate a business rule — does anything go red?
 
-**C'est le seul des huit symptômes qui dispose d'une preuve mécanique.** Quand le score de mutation de la Phase 1 est disponible, l'utiliser plutôt que le jugement : « 43% des mutants survivent sur le module de facturation » est opposable à une équipe qui conteste l'audit, là où « ces tests m'ont l'air creux » ouvre un débat d'opinion. Citer le score, le périmètre et la date.
+**This is the only one of the eight symptoms that comes with mechanical proof.** When the Phase 1 mutation score is available, use it instead of judgement: "43% of the mutants survive in the billing module" holds up against a team that disputes the audit, where "these tests look hollow to me" only opens a debate of opinion. Quote the score, the scope and the date.
 
-À défaut de run réel, la mutation mentale reste valable — mais le finding se formule alors comme une hypothèse à vérifier, pas comme un constat. La doctrine de la phase est de **prouver** les symptômes ; un symptôme prouvé et un symptôme soupçonné ne se priorisent pas pareil.
+Without a real run, mental mutation still works — but the finding is then phrased as a hypothesis to verify, not as an established fact. The doctrine of this phase is to **prove** symptoms; a proven symptom and a suspected one are not prioritized alike.
 
-### S4 — Incohérence de conventions
-*Combien de styles cohabitent ?* Nommage hétérogène, trois façons de gérer les erreurs, mélange de paradigmes — trace de sessions de génération successives sans mémoire l'une de l'autre. L'incohérence coûte : chaque zone se relit avec une grille différente.
+### S4 — Inconsistent conventions
+*How many styles live side by side?* Heterogeneous naming, three ways of handling errors, mixed paradigms — the trace of successive generation sessions with no memory of one another. Inconsistency has a price: every area has to be read through a different lens.
 
-### S5 — Code mort et chemins fantômes
-*Qu'est-ce qui ne sert à rien ?* Fonctions jamais appelées, features à moitié branchées, flags de config orphelins, fichiers générés puis abandonnés. Le code mort généré est dangereux : il a l'air intentionnel.
+### S5 — Dead code and phantom paths
+*What serves no purpose?* Functions never called, features half wired up, orphaned config flags, files generated then abandoned. Generated dead code is dangerous: it looks intentional.
 
-### S6 — Gestion d'erreurs de façade
-*Que se passe-t-il quand ça échoue ?* try/catch qui avalent, messages génériques, erreurs loggées puis ignorées, absence de stratégie (retry ? propagation ? compensation ?). Le code généré gère la forme de l'erreur, rarement son fond.
+### S6 — Facade error handling
+*What happens when things fail?* try/catch blocks that swallow, generic messages, errors logged then ignored, no strategy at all (retry? propagate? compensate?). Generated code handles the shape of an error, rarely its substance.
 
-### S7 — Documentation et commentaires mensongers
-*Ce qui est écrit est-il vrai ?* Commentaires qui paraphrasent le code, docstrings génériques, README qui décrit un projet qui n'existe plus, exemples qui ne compilent pas. Une doc fausse est pire qu'une absence de doc.
+### S7 — Lying documentation and comments
+*Is what is written true?* Comments that paraphrase the code, boilerplate docstrings, a README describing a project that no longer exists, examples that do not compile. Wrong docs are worse than no docs.
 
-### S8 — Frontières architecturales poreuses
-*La logique métier est-elle là où elle doit être ?* Logique métier éparpillée dans les contrôleurs et l'infra, couches qui fuient, couplage fort entre modules censés être indépendants, modèle anémique. **Quand cette catégorie domine, invoquer le skill `ddd-advisor`** pour qualifier les symptômes de conception et proposer le découpage cible.
+### S8 — Porous architectural boundaries
+*Is the domain logic where it belongs?* Domain logic scattered across controllers and infrastructure, leaking layers, tight coupling between modules meant to be independent, an anemic model. **When this category dominates, invoke the `ddd-advisor` skill** to qualify the design symptoms and propose the target split.
 
-Pour chaque symptôme constaté : citer des occurrences précises (`fichier:ligne`), estimer l'étendue (cas isolé, zone, systémique), et noter la conséquence concrète (pourquoi c'est un coût, pas juste une laideur).
+For every symptom observed: cite precise occurrences (`file:line`), estimate the spread (isolated case, one area, systemic), and note the concrete consequence (why it costs, not just why it is ugly).
 
-## Phase 3 — Rapport d'audit
+## Phase 3 — Audit report
 
-Classer chaque finding :
+Classify each finding:
 
-- **Critique** — empêche de travailler en confiance : zone non testable, comportement imprévisible, faille, corruption possible.
-- **Structurel** — dette qui ralentit chaque évolution : duplication systémique, frontières poreuses, tests cosmétiques étendus.
-- **Cosmétique** — coût réel mais localisé : nommage, code mort isolé, doc obsolète.
+- **Critical** — makes confident work impossible: an untestable area, unpredictable behavior, a vulnerability, possible corruption.
+- **Structural** — debt that slows down every change: systemic duplication, porous boundaries, widespread cosmetic tests.
+- **Cosmetic** — a real but local cost: naming, isolated dead code, stale docs.
 
-Écrire le rapport dans `.audit/<projet>-<AAAA-MM-JJ>.md`, puis présenter la synthèse en conversation et **faire valider les findings par l'utilisateur avant de passer au plan** — il connaît des contraintes que le code ne montre pas. TOUJOURS suivre cette structure :
+Write the report to `.audit/<project>-<YYYY-MM-DD>.md`, then present the summary in conversation and **have the user validate the findings before moving on to the plan** — they know constraints the code does not show. The report is written in the language of the audited project, headings included; the template below fixes the structure, not the wording. ALWAYS follow this structure:
 
 ```markdown
-# Audit à froid — <projet>
-**Date** : … · **Périmètre** : … · **Référentiels disponibles** : …
+# Cold audit — <project>
+**Date**: ... · **Scope**: ... · **Reference material available**: ...
 
-## Synthèse
-État général en 3-5 phrases, et les 2-3 chantiers qui changeraient le plus la donne.
+## Summary
+Overall state in 3-5 sentences, and the 2-3 worksites that would change the most.
 
-## Signaux mesurés
-Chiffres bruts de la Phase 1.
+## Measured signals
+Raw numbers from Phase 1.
 
-## Findings par symptôme
-### S1 — Duplication systémique : <néant | localisé | systémique>
-- **[C1|St1|c1] <titre>** — `fichier:ligne` · étendue · conséquence concrète
-(… S2 à S8, même format ; mentionner explicitement les catégories saines)
+## Findings by symptom
+### S1 — Systemic duplication: <none | local | systemic>
+- **[C1|St1|c1] <title>** — `file:line` · spread · concrete consequence
+(... S2 to S8, same format; call out the healthy categories explicitly)
 
-## Vérifications non réalisées
-Référentiels absents, zones non couvertes, outils indisponibles.
+## Checks not performed
+Missing reference material, areas not covered, tools unavailable.
 
-## Points positifs
-Ce qui est sain et doit être préservé pendant la remédiation.
+## What works
+What is sound and must be preserved through the remediation.
 ```
 
-## Phase 4 — Plan de remédiation
+## Phase 4 — Remediation plan
 
-Une fois les findings validés, produire le plan dans `.audit/<projet>-remediation-<AAAA-MM-JJ>.md` :
+Once the findings are validated, produce the plan in `.audit/<project>-remediation-<YYYY-MM-DD>.md`, in the same language as the report:
 
-1. **Prioriser** par le ratio coût-du-symptôme / effort, en intégrant les irritants exprimés en Phase 0. Règle d'or : **sécuriser avant de transformer** — les tests de caractérisation des zones critiques passent avant tout refactoring, c'est le prérequis Mikado universel.
-2. **Découper en chantiers** : chaque chantier traite un symptôme dans une zone, avec son mini-graphe Mikado (objectif, prérequis connus), son critère de fin observable, et une taille cible d'une session de travail maximum.
-3. **Ordonner** les chantiers pour que chacun laisse le codebase strictement meilleur et au vert — jamais de chantier dont la valeur dépend d'un chantier futur.
+1. **Prioritize** by the cost-of-symptom / effort ratio, folding in the pain points voiced in Phase 0. Golden rule: **secure before transforming** — characterization tests for the critical areas come before any refactoring, that is the universal Mikado prerequisite.
+2. **Cut into worksites**: each worksite deals with one symptom in one area, with its own small Mikado graph (goal, known prerequisites), an observable definition of done, and a target size of one working session at most.
+3. **Order** the worksites so that each one leaves the codebase strictly better and green — never a worksite whose value depends on a future one.
 
-### Après le plan
+### After the plan
 
-L'exécution de chaque chantier passe par `plan-driven-dev`, le chantier devenant l'entrée de la phase de plan. Proposer aussi, selon les findings :
-- `codebase-cartographer` si l'absence de référentiel est elle-même un finding — documenter avant ou pendant la remédiation ;
-- `codebase-harness` pour transformer les décisions de remédiation en invariants exécutables, afin que les agents qui continueront à contribuer ne réintroduisent pas les symptômes corrigés. Deux briques répondent directement à des symptômes de cette liste : la brique A (seuils de forme) contient S1 et S2, la brique D (mutation testing) empêche S3 de revenir en fixant un seuil à la valeur mesurée pendant l'audit.
+Each worksite is executed through `plan-driven-dev`, the worksite becoming the input to its planning phase. Depending on the findings, also offer:
+- `codebase-cartographer` when the lack of reference material is itself a finding — document before or during the remediation;
+- `codebase-harness` to turn the remediation decisions into executable invariants, so that the agents who keep contributing do not reintroduce the symptoms just fixed. Two blocks answer symptoms from this list directly: block A (shape thresholds) contains S1 and S2, and block D (mutation testing) keeps S3 from coming back by pinning a threshold at the value measured during the audit.

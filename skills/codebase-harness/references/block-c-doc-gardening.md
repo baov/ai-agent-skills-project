@@ -1,49 +1,49 @@
-# Brique C — Doc-gardening automatisé
+# Block C — Automated doc-gardening
 
-Chargé par `codebase-harness` uniquement si cette brique a été retenue au QCM de scoping (étape 2). Les autres briques sont dans les fichiers `brique-*.md` voisins.
+Loaded by `codebase-harness` only if this block was retained in the scoping multiple-choice question (step 2). The other blocks live in the neighbouring `block-*.md` files.
 
 ---
 
-## 6.0 — Ce que cette brique automatise, et ce qu'elle ne peut pas
+## 6.0 — What this block automates, and what it cannot
 
-Le doc-gardening fait deux choses de nature différente :
+Doc-gardening does two things of a different nature:
 
-| | Nature | Besoin |
+| | Nature | Needs |
 |---|---|---|
-| **Exécuter les checks** et collecter les violations | Déterministe | Un ordonnanceur. C'est tout. |
-| **Interpréter la dérive** — invariant devenu obsolète, test-case orphelin, doc qui ne décrit plus le code | Jugement | Un agent. |
+| **Running the checks** and collecting the violations | Deterministic | A scheduler. That is all. |
+| **Interpreting the drift** — an invariant gone stale, an orphan test-case, documentation that no longer describes the code | Judgement | An agent. |
 
-La première partie tourne partout. La seconde suppose que l'hôte sache planifier l'exécution d'un agent — ce que tous ne savent pas faire.
+The first part runs anywhere. The second assumes the host knows how to schedule an agent run — which not all of them do.
 
-**Par défaut, ne livrer que la première.** Un rapport mécanique hebdomadaire vaut mieux qu'une interprétation qui ne s'exécute jamais. La seconde s'ajoute si, et seulement si, l'hôte la permet.
+**By default, ship the first one only.** A weekly mechanical report beats an interpretation that never runs. The second is added if, and only if, the host allows it.
 
 ## 6.1 — Cadence
 
-L'agent propose les cadences via QCM (voir `clarify-with-choices`) :
+The agent proposes the cadences through a multiple-choice question (see `clarify-with-choices`):
 
-| Cadence | Cron | Cas d'usage |
+| Cadence | Cron | Use case |
 |---------|------|-------------|
-| Quotidienne | `0 9 * * *` | Projet actif, beaucoup de contributions |
-| Hebdomadaire (défaut) | `0 9 * * 1` | Projet en développement normal |
-| Bi-mensuelle | `0 9 1,15 * *` | Projet en maintenance |
-| Mensuelle | `0 9 1 * *` | Projet stable |
+| Daily | `0 9 * * *` | Active project, plenty of contributions |
+| Weekly (default) | `0 9 * * 1` | Project under normal development |
+| Twice a month | `0 9 1,15 * *` | Project in maintenance |
+| Monthly | `0 9 1 * *` | Stable project |
 
-## 6.2 — Ordonnanceur : choisir le support
+## 6.2 — Scheduler: choosing the host
 
-L'agent détecte ce dont le projet dispose et propose **un seul** support, dans cet ordre de préférence :
+The agent detects what the project has available and proposes **a single** host, in this order of preference:
 
-| Support | Condition | Pourquoi ce rang |
+| Host | Condition | Why this rank |
 |---|---|---|
-| **GitHub Actions planifié** | `.github/` présent | Versionné avec le code, visible par l'équipe, aucun secret requis |
-| **Pipeline planifié GitLab** | `.gitlab-ci.yml` présent | Idem ; la planification se configure dans *CI/CD → Schedules* |
-| **Ordonnanceur de l'agent hôte** | L'hôte expose un mécanisme de tâche planifiée | Seul support capable d'ajouter l'interprétation (voir 6.4) |
-| **cron local** | Aucun des précédents | Repli. Ne tourne que sur la machine où il est posé — le dire à l'utilisateur. |
+| **Scheduled GitHub Actions** | `.github/` present | Versioned with the code, visible to the team, no secret required |
+| **Scheduled GitLab pipeline** | `.gitlab-ci.yml` present | Same; the schedule is configured under *CI/CD → Schedules* |
+| **The host agent's scheduler** | The host exposes a scheduled-task mechanism | The only host able to add interpretation (see 6.4) |
+| **Local cron** | None of the above | Fallback. Runs only on the machine it was set up on — say so to the user. |
 
-Ne jamais en installer deux : deux rapports pour la même dérive, c'est du bruit qui finit ignoré.
+Never install two of them: two reports for the same drift is noise, and noise ends up ignored.
 
-## 6.3 — Rapport mécanique (portable, par défaut)
+## 6.3 — Mechanical report (portable, the default)
 
-Le job exécute tous les scripts de `tools/harness/` et agrège leur sortie. Ils respectent le contrat commun (`--explain`, `--root`, codes 0/1/2), donc l'agrégation ne connaît aucun script individuellement.
+The job runs every script in `tools/harness/` and aggregates their output. They honor the common contract (`--explain`, `--root`, codes 0/1/2), so the aggregation knows nothing about any individual script.
 
 ```yaml
 # .github/workflows/doc-gardening.yml
@@ -51,64 +51,64 @@ name: doc-gardening
 
 on:
   schedule:
-    - cron: '0 9 * * 1'   # cadence retenue au QCM
-  workflow_dispatch:       # déclenchement manuel, pour tester sans attendre
+    - cron: '0 9 * * 1'   # the cadence retained in the multiple-choice question
+  workflow_dispatch:       # manual trigger, to test without waiting
 
 permissions:
   contents: read
   issues: write
 
 jobs:
-  rapport:
+  report:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Exécution des checks du harness
+      - name: Run the harness checks
         id: checks
         run: |
-          : > rapport.md
+          : > report.md
           for script in tools/harness/*; do
             [ -x "$script" ] || continue
-            sortie=$("$script" --root . 2>&1) || true
-            [ -n "$sortie" ] && printf '## %s\n\n```\n%s\n```\n\n' "$(basename "$script")" "$sortie" >> rapport.md
+            output=$("$script" --root . 2>&1) || true
+            [ -n "$output" ] && printf '## %s\n\n```\n%s\n```\n\n' "$(basename "$script")" "$output" >> report.md
           done
-          if [ -s rapport.md ]; then echo "derive=oui" >> "$GITHUB_OUTPUT"; fi
+          if [ -s report.md ]; then echo "drift=yes" >> "$GITHUB_OUTPUT"; fi
 
-      # Silence = OK. Aucune issue ouverte quand tout est au vert.
-      - name: Remontée
-        if: steps.checks.outputs.derive == 'oui'
-        run: gh issue create --title "Doc-gardening — dérives détectées" --body-file rapport.md
+      # Silence means OK. No issue is opened when everything is green.
+      - name: Reporting
+        if: steps.checks.outputs.drift == 'yes'
+        run: gh issue create --title "Doc-gardening — drift detected" --body-file report.md
         env:
           GH_TOKEN: ${{ github.token }}
 ```
 
-Pour GitLab, le même corps de script dans un job dont la règle est `if: $CI_PIPELINE_SOURCE == "schedule"`, la planification étant définie dans *CI/CD → Schedules*.
+For GitLab, the same script body in a job whose rule is `if: $CI_PIPELINE_SOURCE == "schedule"`, the schedule itself being defined under *CI/CD → Schedules*.
 
-**Présenter le fichier à l'utilisateur et demander la permission avant de l'écrire**, comme pour les autres briques.
+**Show the file to the user and ask permission before writing it**, as with the other blocks. The issue title and anything else the job says out loud are written in the target project's language.
 
-## 6.4 — Interprétation (optionnelle, dépend de l'hôte)
+## 6.4 — Interpretation (optional, depends on the host)
 
-Si l'hôte expose un ordonnanceur capable de lancer un agent, proposer en plus une tâche planifiée portant ce prompt :
+If the host exposes a scheduler able to launch an agent, additionally propose a scheduled task carrying this prompt:
 
 ```
-Relance le skill codebase-harness en mode mise à jour sur le projet [chemin].
-Ne modifie aucun fichier automatiquement — produis uniquement un rapport
-consolidé : violations d'invariants nouvelles, invariants obsolètes,
-test-cases dérivés (covered_broken ou nouveau test sans test-case),
-régression du score de mutation par rapport à la baseline et mutants
-survivants nouveaux, doc qui aurait dérivé. Si tout est au vert, dis-le et
-n'envoie rien d'autre.
+Run the codebase-harness skill again in update mode on the project [path].
+Do not change any file automatically — produce a consolidated report only:
+new invariant violations, stale invariants, drifted test-cases
+(covered_broken, or a new test with no test-case), mutation score
+regression against the baseline and new surviving mutants, documentation
+that may have drifted. If everything is green, say so and send nothing
+else. Write the report in the language of the project.
 ```
 
-Le nom de l'outil de planification varie selon l'agent : ne pas le coder en dur, utiliser celui que l'hôte expose. Si l'hôte n'en expose aucun, **ne pas simuler** — le dire, et s'en tenir au rapport mécanique du 6.3.
+The name of the scheduling tool varies from one agent to the next: do not hard-code it, use whichever one the host exposes. If the host exposes none, **do not fake it** — say so, and stick to the mechanical report of 6.3.
 
-Présenter le prompt et la cadence, **demander explicitement la permission**, et créer la tâche seulement après confirmation.
+Show the prompt and the cadence, **ask for permission explicitly**, and create the task only once confirmed.
 
-## 6.5 — Garde-fous
+## 6.5 — Guardrails
 
-La tâche ne doit JAMAIS appliquer de changements sans QCM, même quand elle s'exécute sans humain au clavier. Son rôle est de produire un signal, pas un fix.
+The task must NEVER apply changes without a multiple-choice question, even when it runs with no human at the keyboard. Its job is to produce a signal, not a fix.
 
-Si le rapport est vide (tout au vert), elle ne produit aucun message — **silence = OK**. Un rapport « rien à signaler » envoyé chaque semaine apprend à l'équipe à ne plus l'ouvrir.
+If the report is empty (everything green), it produces no message at all — **silence means OK**. A "nothing to report" report sent every week teaches the team to stop opening it.
 
 ---

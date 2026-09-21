@@ -1,155 +1,156 @@
-# DDD Tactique — Blocs de construction, heuristiques de décision, symptômes
+# Tactical DDD — Building blocks, decision heuristics, symptoms
 
-Référence pour le mode Guide (décisions de modélisation) et le mode Audit (sections Symptômes).
+Reference for guidance mode (modeling decisions) and audit mode (Symptoms sections).
 
-## Sommaire
-1. Architecture en couches
-2. Entités vs Objets-Valeurs (arbre de décision)
-3. Services (et dans quelle couche)
+## Contents
+1. Layered architecture
+2. Entities vs value objects (decision tree)
+3. Services (and which layer they belong to)
 4. Modules
-5. Agrégats (règles de frontière)
-6. Fabriques vs constructeurs
-7. Entrepôts
-8. Concepts explicites : Contrainte, Processus, Spécification
-9. Symptômes d'audit tactiques
+5. Aggregates (boundary rules)
+6. Factories vs constructors
+7. Repositories
+8. Making concepts explicit: constraint, process, specification
+9. Tactical audit symptoms
 
 ---
 
-## 1. Architecture en couches
+## 1. Layered architecture
 
-Quatre couches, dépendances uniquement vers le bas :
+Four layers, dependencies pointing downwards only:
 
 ```
-Interface utilisateur  →  présentation, interprétation des commandes
-Application            →  fine, coordonne, AUCUNE logique métier, pas d'état métier
-Domaine                →  cœur : état et règles métier
-Infrastructure         →  persistance, communication, bibliothèques de soutien
+User interface        →  presentation, interpretation of commands
+Application           →  thin, coordinates, NO domain logic, no domain state
+Domain                →  the core: domain state and rules
+Infrastructure        →  persistence, communication, supporting libraries
 ```
 
-Règles d'or :
-- La couche application peut détenir l'état d'avancement d'une **tâche**, jamais l'état d'un
-  **objet métier**.
-- Les objets du domaine ne s'affichent pas, ne se persistent pas, ne s'orchestrent pas
-  eux-mêmes.
-- Test rapide : peut-on tester la couche domaine sans base de données ni framework web ?
-  Si non → fuite.
+Golden rules:
+- The application layer may hold the progress state of a **task**, never the state of a
+  **domain object**.
+- Domain objects do not display themselves, do not persist themselves, do not orchestrate
+  themselves.
+- Quick test: can the domain layer be tested without a database and without a web framework?
+  If not → a leak.
 
-## 2. Entités vs Objets-Valeurs
+## 2. Entities vs value objects
 
-**Entité** : ce qui compte est une continuité d'identité au fil du temps, indépendante des
-attributs (compte bancaire, vol, client). **Objet-Valeur** : seuls les attributs comptent
-(adresse, montant, coordonnées, plage de dates).
+**Entity**: what matters is a continuity of identity over time, independent of the attributes
+(a bank account, a flight, a customer). **Value object**: only the attributes matter (an
+address, an amount, coordinates, a date range).
 
-Arbre de décision :
+Decision tree:
 ```
-Doit-on distinguer deux instances aux attributs identiques ?
-├── OUI → Entité
-│   └── Définir l'identité : attribut naturel (n° de compte), ID généré,
-│       ou combinaison d'attributs. Le modèle doit définir "être le même".
-└── NON → Objet-Valeur
-    ├── IMMUABLE obligatoire s'il est partagé (règle d'or)
-    ├── Création complète et valide au constructeur, sinon exception
-    └── Regrouper les attributs en touts conceptuels (rue+ville+état → Adresse)
+Do two instances with identical attributes have to be told apart?
+├── YES → Entity
+│   └── Define the identity: a natural attribute (account number), a generated ID,
+│       or a combination of attributes. The model must define what "being the same" means.
+└── NO → Value object
+    ├── IMMUTABLE is mandatory once it is shared (the golden rule)
+    ├── Complete and valid at construction time, otherwise an exception
+    └── Group attributes into conceptual wholes (street+city+state → Address)
 ```
 
-Pièges :
-- Tout transformer en entité « par uniformité » : coût d'identité, dégradation des
-  performances, complexité inutile.
-- Objet-Valeur mutable partagé : corruption silencieuse (le changement d'un client se
-  propage à l'autre).
+Traps:
+- Turning everything into an entity "for consistency": the cost of identity, degraded
+  performance, needless complexity.
+- A shared mutable value object: silent corruption (a change for one customer propagates to
+  the other).
 
 ## 3. Services
 
-Un comportement important du domaine qui n'appartient naturellement à aucune Entité ni
-Objet-Valeur (ex. : virement entre deux comptes). Trois critères cumulatifs :
-1. L'opération réfère à un concept du domaine hors Entité/Objet-Valeur
-2. Elle réfère à d'autres objets du domaine
-3. Elle est **sans état**
+An important domain behavior that belongs naturally to no entity and no value object (for
+instance: a transfer between two accounts). Three criteria, all required:
+1. The operation refers to a domain concept that is neither an entity nor a value object
+2. It refers to other domain objects
+3. It is **stateless**
 
-Placement par couche :
-- L'opération répond à un besoin **du domaine** → Service de domaine
-- Elle **coordonne** une tâche applicative (récupérer, invoquer, persister) → Service applicatif
-- Elle est technique (envoi d'email, fichier) → Infrastructure
+Placement by layer:
+- The operation answers a need **of the domain** → domain service
+- It **coordinates** an application task (fetch, invoke, persist) → application service
+- It is technical (sending an email, writing a file) → infrastructure
 
-Anti-pattern : créer un Service par opération → modèle anémique garanti. Un Service
-ne remplace jamais une opération qui appartient à un objet.
+Anti-pattern: one service per operation → an anemic domain model, guaranteed. A service never
+replaces an operation that belongs to an object.
 
 ## 4. Modules
 
-- Regrouper par cohésion conceptuelle (communicationnelle ou fonctionnelle), exposer des
-  interfaces, viser couplage faible.
-- Les noms de modules font partie du Langage omniprésent et doivent raconter le domaine.
-- Refactorer un module coûte cher mais coûte moins cher que des palliatifs permanents.
+- Group by conceptual cohesion (communicational or functional), expose interfaces, aim for
+  loose coupling.
+- Module names are part of the ubiquitous language and must tell the domain's story.
+- Refactoring a module is expensive, but less expensive than permanent workarounds.
 
-## 5. Agrégats
+## 5. Aggregates
 
-Groupe d'objets traité comme un tout vis-à-vis des modifications. Règles structurelles :
+A cluster of objects treated as a whole for the purpose of changes. Structural rules:
 
 ```
-                    ┌──────────────── frontière ───────────────┐
- objets externes ──►│ RACINE (Entité, identité globale)        │
-   (réf. racine     │   ├─► entités internes (identité locale) │
-    uniquement)     │   └─► objets-valeurs                     │
+                    ┌──────────────── boundary ────────────────┐
+ external objects ─►│ ROOT (entity, global identity)           │
+  (root reference   │   ├─► internal entities (local identity) │
+   only)            │   └─► value objects                      │
                     └──────────────────────────────────────────┘
 ```
 
-- Seule la racine est référencée de l'extérieur et obtenue par requête (Entrepôt).
-- La racine fait respecter les **invariants** à chaque changement d'état.
-- Références éphémères d'objets internes : autorisées le temps d'une opération ; sinon,
-  passer des **copies** d'Objets-Valeurs.
-- Un objet interne peut référencer la racine d'un AUTRE agrégat (jamais ses internes).
-- Suppression de la racine = suppression de tout l'agrégat.
+- Only the root is referenced from the outside and obtained by query (a repository).
+- The root enforces the **invariants** at every change of state.
+- Transient references to internal objects: allowed for the duration of one operation;
+  otherwise, hand out **copies** of value objects.
+- An internal object may reference the root of ANOTHER aggregate (never its internals).
+- Deleting the root deletes the whole aggregate.
 
-Heuristique de frontière : « qu'est-ce qui doit être cohérent dans la même transaction ? »
-Avant de tracer, réduire les associations : supprimer les non essentielles, contraindre la
-multiplicité, rendre unidirectionnel ce qui peut l'être.
+Boundary heuristic: "what has to be consistent within the same transaction?" Before drawing
+it, cut the associations down: remove the non-essential ones, constrain multiplicity, make
+one-way whatever can be one-way.
 
-## 6. Fabriques
+## 6. Factories
 
-Encapsulent la création d'objets/agrégats complexes. Création **atomique** : la racine et
-tous les objets sous invariants naissent ensemble, valides, sinon exception.
+They encapsulate the creation of complex objects and aggregates. Creation is **atomic**: the
+root and every object under an invariant are born together and valid, otherwise an exception.
 
-- **Méthode de fabrication** sur la racine : pour créer un objet QUI APPARTIENT à l'agrégat.
-- **Fabrique dédiée** : pour créer l'agrégat entier ; elle porte règles, contraintes, invariants.
+- **A factory method** on the root: to create an object THAT BELONGS TO the aggregate.
+- **A dedicated factory**: to create the whole aggregate; it carries the rules, constraints
+  and invariants.
 
-Un simple constructeur suffit quand : construction simple, pas de création en cascade, la
-classe est le type (pas de hiérarchie), le client choisit l'implémentation.
+A plain constructor is enough when: construction is simple, nothing cascades, the class is the
+type (no hierarchy), and the client picks the implementation.
 
-Distinction reconstitution : recréer un objet depuis la base ≠ création (pas de nouvelle
-identité, violation d'invariant → réparation, pas exception).
+Reconstitution is a distinct case: recreating an object from the database is not creation (no
+new identity, and a broken invariant calls for repair, not an exception).
 
-## 7. Entrepôts
+## 7. Repositories
 
-Illusion d'une collection en mémoire de tous les objets d'un type. Encapsulent la
-technologie de stockage et de requêtage.
+The illusion of an in-memory collection holding every object of a type. They encapsulate the
+storage and querying technology.
 
-- Un Entrepôt **seulement par racine d'agrégat** nécessitant un accès global.
-- Interface en pur langage du domaine ; implémentation côté infrastructure.
-- Sélection par identité, par critères, ou par **Spécification** pour les critères complexes.
-- Fabrique crée du neuf ; Entrepôt retrouve l'existant. Flux d'ajout :
-  client → Fabrique (création) → Entrepôt (stockage).
+- A repository **only per aggregate root** that needs global access.
+- The interface speaks pure domain language; the implementation lives in infrastructure.
+- Selection by identity, by criteria, or through a **specification** for complex criteria.
+- A factory makes something new; a repository finds something that exists. Adding flow:
+  client → factory (creation) → repository (storage).
 
-## 8. Rendre les concepts explicites
+## 8. Making concepts explicit
 
-- **Contrainte** : extraire l'invariant dans une méthode nommée (`espaceEstDisponible()`),
-  lisible et évolutive.
-- **Processus** : Service ; si plusieurs algorithmes → Stratégie. À rendre explicite quand
-  le Langage omniprésent le nomme.
-- **Spécification** : objet de la couche domaine qui teste qu'un objet satisfait des critères
-  (`clientEligible.estSatisfaitePar(client)`). Combinables. Usages : validation, sélection,
-  condition de création. Évite l'éparpillement des règles booléennes complexes.
+- **Constraint**: extract the invariant into a named method (`spaceIsAvailable()`), readable
+  and open to change.
+- **Process**: a service; if there are several algorithms → a strategy. Make it explicit as
+  soon as the ubiquitous language names it.
+- **Specification**: a domain-layer object testing whether an object meets a set of criteria
+  (`eligibleCustomer.isSatisfiedBy(customer)`). They combine. Uses: validation, selection,
+  creation condition. It stops complex boolean rules from scattering.
 
-## 9. Symptômes d'audit tactiques
+## 9. Tactical audit symptoms
 
-| # | Symptôme | Indices dans le code | Gravité typique | Remédiation |
+| # | Symptom | Clues in the code | Typical severity | Remediation |
 |---|---|---|---|---|
-| T1 | Modèle anémique | Entités 100 % getters/setters ; classes `*Manager`, `*Helper`, `*Util` pleines de logique métier | Majeur | Rapatrier le comportement dans les Entités/OV ; Services seulement pour le transverse |
-| T2 | Fuite de couches | SQL/HTTP dans le domaine ; règles métier dans contrôleurs ou composants UI ; domaine intestable sans BDD | Bloquant | Architecture en couches ; isoler le domaine ; injection de l'infra |
-| T3 | Agrégat absent | Tout le monde référence tout le monde ; modifications concurrentes incohérentes ; invariants vérifiés « ailleurs » | Majeur | Tracer frontières + racines ; réduire les associations |
-| T4 | Agrégat obèse | Une racine charge la moitié du modèle ; transactions énormes ; verrouillage généralisé | Majeur | Scinder par invariants transactionnels réels |
-| T5 | Identité injustifiée | IDs sur des objets purement descriptifs ; comparaison d'égalité par référence sur des valeurs | Mineur | Convertir en Objets-Valeurs immuables |
-| T6 | OV mutable partagé | setters sur objets partagés (Adresse, Money) | Majeur | Immuabilité + remplacement par copie |
-| T7 | Accès données anarchique | Requêtes directes éparpillées ; restauration d'objets internes d'agrégats ; logique métier dans les requêtes | Majeur | Entrepôts par racine ; Spécifications |
-| T8 | Construction éparpillée | Le code client assemble des graphes d'objets complexes ; états semi-construits | Mineur | Fabriques, création atomique |
-| T9 | Langage divergent | Noms techniques (`DataObject`, `ProcessorImpl`) sans rapport avec le glossaire métier ; traduction permanente expert ↔ code | Majeur | Refactorer les noms vers le Langage omniprésent ; aligner code et glossaire |
-| T10 | Règles implicites | Conditions booléennes dupliquées ; « pourquoi » du code introuvable | Mineur | Contraintes nommées, Spécifications, Processus explicites |
+| T1 | Anemic domain model | Entities that are 100 % getters and setters; `*Manager`, `*Helper`, `*Util` classes stuffed with domain logic | Major | Move the behavior back into the entities and value objects; services only for the cross-cutting |
+| T2 | Leaking layers | SQL or HTTP in the domain; domain rules in controllers or UI components; a domain that cannot be tested without a database | Blocking | Layered architecture; isolate the domain; inject the infrastructure |
+| T3 | Missing aggregate | Everyone references everyone; inconsistent concurrent changes; invariants checked "somewhere else" | Major | Draw the boundaries and the roots; cut the associations down |
+| T4 | Bloated aggregate | One root loads half the model; enormous transactions; locking everywhere | Major | Split along the real transactional invariants |
+| T5 | Unwarranted identity | IDs on purely descriptive objects; equality by reference on values | Minor | Convert into immutable value objects |
+| T6 | Shared mutable value object | Setters on shared objects (Address, Money) | Major | Immutability plus replacement by copy |
+| T7 | Unruly data access | Direct queries scattered around; restoring an aggregate's internal objects; domain logic inside queries | Major | Repositories per root; specifications |
+| T8 | Scattered construction | Client code assembling complex object graphs; half-built states | Minor | Factories, atomic creation |
+| T9 | Diverging language | Technical names (`DataObject`, `ProcessorImpl`) unrelated to the domain glossary; constant translation between expert and code | Major | Refactor the names towards the ubiquitous language; line up code and glossary |
+| T10 | Implicit rules | Duplicated boolean conditions; the "why" of the code nowhere to be found | Minor | Named constraints, specifications, explicit processes |

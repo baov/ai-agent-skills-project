@@ -1,174 +1,176 @@
-# Brique D — Mutation testing
+# Block D — Mutation testing
 
-Chargé par `codebase-harness` uniquement si cette brique a été retenue au QCM de scoping (étape 2). Les autres briques sont dans les fichiers `brique-*.md` voisins.
+Loaded by `codebase-harness` only if this block was retained in the scoping multiple-choice question (step 2). The other blocks live in the neighbouring `block-*.md` files.
 
 ---
 
-## 5.0 — Ce que cette brique résout
+## 5.0 — What this block solves
 
-Les briques A et B contrôlent le code et l'existence des tests. Aucune ne contrôle **la valeur des tests eux-mêmes**. C'est l'angle mort qui compte le plus quand des agents écrivent la suite de tests : un test peut s'exécuter, être vert, couvrir 100 % des lignes et n'asserter rien d'utile.
+Blocks A and B control the code and the existence of the tests. Neither controls **the value of the tests themselves**. That is the blind spot that matters most when agents write the test suite: a test can run, be green, cover 100% of the lines and assert nothing useful.
 
-Le mutation testing répond exactement à ça : l'outil introduit des altérations mécaniques du code (inverser une condition, remplacer un `+` par un `-`, supprimer un appel, retourner `null`), relance les tests, et vérifie qu'au moins un test échoue. Un mutant **tué** signifie que les tests protègent ce comportement. Un mutant **survivant** signifie qu'on peut casser cette ligne sans qu'aucun test ne s'en aperçoive.
+Mutation testing answers exactly that: the tool introduces mechanical alterations of the code (flip a condition, replace a `+` with a `-`, drop a call, return `null`), runs the tests again, and checks that at least one test fails. A **killed** mutant means the tests protect that behavior. A **surviving** mutant means that line can be broken without any test noticing.
 
-À dire explicitement à l'utilisateur, parce que c'est la confusion la plus fréquente : **le score de mutation n'est pas un coverage amélioré**. Le coverage mesure quelles lignes s'exécutent ; le score de mutation mesure si les assertions valent quelque chose. C'est la métrique que le coverage prétend être sans jamais l'être — et la seule qui justifie de ne pas relire un test à la main.
+To be said to the user explicitly, because it is the most frequent confusion: **the mutation score is not an improved coverage**. Coverage measures which lines run; the mutation score measures whether the assertions are worth anything. It is the metric coverage pretends to be without ever being it — and the only one that justifies not reading a test by hand.
 
-> Cohérence avec `behavior-driven-testing` : ce skill ne fixe pas d'objectif chiffré comme but en soi. Le score de mutation est un **outil de diagnostic** — un mutant survivant est une question (« quel comportement n'est pas protégé ici ? »), pas une case à cocher. Un seuil en CI sert à empêcher une régression, pas à faire monter un chiffre.
+> Consistency with `behavior-driven-testing`: this skill sets no numeric target as an end in itself. The mutation score is a **diagnostic tool** — a surviving mutant is a question ("which behavior is unprotected here?"), not a box to tick. A threshold in CI is there to prevent a regression, not to push a number up.
 
-## 5.1 — Pré-requis et arbitrage du coût
+## 5.1 — Prerequisites and weighing the cost
 
-Avant toute proposition, l'agent vérifie trois choses :
+Before proposing anything, the agent checks three things:
 
-1. **Une suite de tests existe et passe.** Le mutation testing sur une suite rouge n'a aucun sens. Si des tests échouent, le signaler et s'arrêter là.
-2. **La durée d'une exécution complète de la suite.** C'est le facteur multiplicatif : un run de mutation exécute la suite (partiellement) une fois par mutant. Mesurer si possible, sinon demander.
-3. **Le périmètre candidat.** Le run global est presque toujours le mauvais choix.
+1. **A test suite exists and passes.** Mutation testing on a red suite makes no sense. If tests are failing, say so and stop there.
+2. **How long a full run of the suite takes.** That is the multiplier: a mutation run executes the suite (partially) once per mutant. Measure it if possible, otherwise ask.
+3. **The candidate scope.** The global run is almost always the wrong choice.
 
-L'agent présente ensuite l'arbitrage honnêtement, sans vendre la brique :
+The agent then lays out the trade-off honestly, without selling the block:
 
 ```
-Ta suite tourne en ~4 min. Un run de mutation sur l'ensemble du code
-prendrait vraisemblablement plusieurs heures — inexploitable en CI de MR.
+Your suite runs in ~4 min. A mutation run over the whole codebase
+would likely take several hours — unusable in MR CI.
 
-Trois périmètres possibles :
+Three possible scopes:
 
-1. Domaine critique uniquement (recommandé)
-   Les packages/modules qui portent les règles métier. Typiquement
-   10-20% du code, l'essentiel du risque. Run estimé : 10-20 min.
-   → CI nocturne ou pre-merge sur les MR qui touchent ce périmètre.
+1. Critical domain only (recommended)
+   The packages/modules carrying the business rules. Typically
+   10-20% of the code, most of the risk. Estimated run: 10-20 min.
+   → nightly CI, or pre-merge on the MRs that touch this scope.
 
-2. Incrémental sur le diff
-   Ne mute que les fichiers modifiés par la branche. Run court et
-   proportionné, mais ne protège pas contre l'érosion du reste.
-   → CI de MR.
+2. Incremental on the diff
+   Mutates only the files the branch changed. Short, proportionate
+   run, but no protection against erosion elsewhere.
+   → MR CI.
 
 3. Global
-   Couverture complète, run long. Réservé à une exécution
-   hebdomadaire ou mensuelle.
-   → tâche planifiée, jamais en CI bloquante.
+   Full coverage, long run. Reserved for a weekly or monthly
+   execution.
+   → scheduled task, never blocking CI.
 ```
 
-QCM : périmètre 1 / 2 / 3 / combinaison (typiquement 2 en MR + 1 en nocturne) / abandonner la brique D.
+Multiple-choice question: scope 1 / 2 / 3 / a combination (typically 2 on MRs + 1 nightly) / drop block D. What the user actually reads is phrased in the target project's language.
 
-**« Abandonner » est une réponse légitime et doit être présentée comme telle.** Si la suite est lente, instable, ou si la CI est déjà saturée, le mutation testing est un mauvais investissement et l'agent le dit franchement plutôt que d'installer un check qui sera désactivé au premier build rouge.
+**"Drop it" is a legitimate answer and must be presented as such.** If the suite is slow or flaky, or if CI is already saturated, mutation testing is a bad investment and the agent says so plainly rather than installing a check that will be disabled on the first red build.
 
-## 5.2 — Choix du périmètre critique
+## 5.2 — Choosing the critical scope
 
-Si l'utilisateur retient le périmètre 1, l'agent propose une liste de modules en s'appuyant, dans l'ordre :
+If the user settles on scope 1, the agent proposes a list of modules, leaning in this order on:
 
-- Les test-cases marqués `priorite: critique` en brique B → remonter aux modules qu'ils exercent.
-- La couche domaine identifiée par les ADR ou par `ddd-advisor` s'il a tourné.
-- À défaut : les modules avec la plus forte densité de logique conditionnelle, ou ceux que l'utilisateur désigne.
+- The test-cases marked `priority: critical` in block B → trace back to the modules they exercise.
+- The domain layer identified by the ADRs, or by `ddd-advisor` if it ran.
+- Failing that: the modules with the highest density of conditional logic, or the ones the user points at.
 
-Présenter la liste en QCM multi-sélection. Ne jamais deviner en silence : le périmètre est la décision structurante de cette brique.
+Present the list as a multi-select multiple-choice question. Never guess silently: the scope is the structuring decision of this block.
 
-## 5.3 — Production des artefacts
+## 5.3 — Producing the artifacts
 
-#### a) Configuration de l'outil de mutation
+#### a) Configuring the mutation tool
 
-Comme pour les briques A et B, **L'agent détecte l'écosystème et génère la config adaptée**. Ce qui suit est le cahier des charges, valable quel que soit l'outil — c'est lui qui fait foi, pas une liste d'outils qui vieillira.
+As with blocks A and B, **the agent detects the ecosystem and generates the matching config**. What follows is the specification, valid whatever the tool — it is the specification that governs, not a list of tools that will age.
 
-Cinq points à cadrer dans toute config générée, dans cet ordre de priorité :
+Five points to settle in any generated config, in this order of priority:
 
-1. **Périmètre explicite.** Restreindre les cibles au périmètre retenu en 5.2, par globs ou packages nommés. Ne jamais laisser le défaut « tout le code » — c'est la première cause de run inexploitable.
-2. **Jeu de mutateurs par défaut au premier passage.** Les jeux étendus multiplient le temps de run et produisent des mutants équivalents (des altérations sémantiquement neutres, impossibles à tuer). N'élargir que si le score plafonne artificiellement haut.
-3. **Aucun seuil bloquant au premier run.** On mesure avant de contraindre. Le seuil arrive en 5.3.c, après la baseline.
-4. **Un rapport lisible par un humain et un rapport parsable par une machine.** Le second alimente le script du harness ; sans lui, la brique ne peut pas remonter dans le rapport consolidé.
-5. **Timeout et parallélisme calibrés sur la CI réelle**, pas sur les valeurs par défaut de l'outil — et mode incrémental activé s'il existe, c'est ce qui rend le périmètre « diff » viable.
+1. **Explicit scope.** Restrict the targets to the scope retained in 5.2, by globs or by named packages. Never leave the "all the code" default — that is the leading cause of an unusable run.
+2. **Default mutator set on the first pass.** Extended sets multiply run time and produce equivalent mutants (semantically neutral alterations, impossible to kill). Widen only if the score plateaus artificially high.
+3. **No blocking threshold on the first run.** Measure before constraining. The threshold comes in 5.3.c, after the baseline.
+4. **One report a human can read and one a machine can parse.** The second feeds the harness script; without it, the block cannot surface in the consolidated report.
+5. **Timeout and parallelism calibrated on the real CI**, not on the tool's defaults — and incremental mode enabled if it exists, since that is what makes the "diff" scope viable.
 
-La config est écrite dans le projet à l'emplacement standard de l'outil, **pas** dans `tools/harness/`. Le harness fournit le pilotage et la normalisation, jamais la config de l'outil : un développeur doit pouvoir lancer l'outil directement sans passer par le harness.
+The config is written into the project at the tool's standard location, **not** in `tools/harness/`. The harness provides the driving and the normalisation, never the tool's config: a developer has to be able to run the tool directly without going through the harness.
 
-Repères par écosystème, à vérifier au moment du run plutôt qu'à prendre pour argent comptant — l'outillage bouge :
+Landmarks per ecosystem, to be checked at run time rather than taken at face value — tooling moves:
 
-| Écosystème | Outil usuel | Format parsable |
+| Ecosystem | Usual tool | Parsable format |
 |------------|-------------|-----------------|
-| JVM | PIT (`pitest`), via Maven ou Gradle | XML |
+| JVM | PIT (`pitest`), through Maven or Gradle | XML |
 | JS/TS | Stryker | JSON |
 | .NET | Stryker.NET | JSON |
-| Python | mutmut, cosmic-ray | JSON / SQLite selon l'outil |
-| Go | go-mutesting, ou `gremlins` | JSON |
+| Python | mutmut, cosmic-ray | JSON / SQLite depending on the tool |
+| Go | go-mutesting, or `gremlins` | JSON |
 | Rust | `cargo-mutants` | JSON |
 | PHP | Infection | JSON |
 
-Si aucun outil mature n'existe pour la stack détectée, **le dire et proposer d'abandonner la brique D** plutôt que d'installer un outil abandonné ou expérimental. Un harness qui repose sur un outil non maintenu est une dette, pas une protection.
+If no mature tool exists for the detected stack, **say so and propose dropping block D** rather than installing an abandoned or experimental tool. A harness resting on an unmaintained tool is debt, not protection.
 
 #### b) `tools/harness/run_mutation.{sh,ps1}`
 
-Le wrapper est la pièce qui rend la brique agnostique : il absorbe la différence d'outillage et expose un contrat stable, identique à celui des scripts des briques A et B. C'est ce contrat qui doit être respecté, pas une implémentation particulière.
+The wrapper is the piece that makes the block tool-agnostic: it absorbs the difference in tooling and exposes a stable contract, identical to the one the block A and B scripts follow. It is that contract that has to be honored, not any particular implementation.
 
-**Interface** — alignée sur les autres scripts du harness :
-- `--scope critical|diff|full` (défaut `critical`)
-- `--explain` : décrit le périmètre, l'outil utilisé et le seuil, sans rien exécuter
-- `--root <chemin>` : pour pouvoir tester localement
+**Interface** — aligned with the other harness scripts:
+- `--scope critical|diff|full` (default `critical`)
+- `--explain`: describes the scope, the tool in use and the threshold, without running anything
+- `--root <path>`: so it can be tested locally
 
-**Comportement en mode `diff`** : calculer la base avec `git merge-base HEAD origin/<branche cible>` et restreindre le périmètre aux fichiers modifiés, en respectant le format de sélection de l'outil détecté.
+**Behavior in `diff` mode**: compute the base with `git merge-base HEAD origin/<target branch>` and restrict the scope to the modified files, honoring the selection format of the detected tool.
 
-**Sortie normalisée** — indépendante de l'outil sous-jacent :
+**Normalised output** — independent of the underlying tool:
 ```
-MUTATION — périmètre: critical (4 modules) · outil: <détecté>
-score: 78.4% (312 tués / 398 générés)  seuil: 75%  → OK
+MUTATION — scope: critical (4 modules) · tool: <detected>
+score: 78.4% (312 killed / 398 generated)  threshold: 75%  → OK
 
-Mutants survivants les plus significatifs :
-  <fichier>:44  [NEGATE_CONDITIONS]  aucun test ne distingue > de >=
-  <fichier>:71  [MATH]               le calcul du prorata n'est pas asserté
+Most significant surviving mutants:
+  <file>:44  [NEGATE_CONDITIONS]  no test tells > from >=
+  <file>:71  [MATH]               the pro-rata computation is not asserted
 ```
 
-**Codes de sortie** identiques aux autres scripts : `0` OK, `1` sous le seuil `error`, `2` sous le seuil `warn`.
+**Exit codes** identical to the other scripts: `0` OK, `1` below the `error` threshold, `2` below the `warn` threshold.
 
-**Deux interdits** :
-- Le script n'écrit jamais de test. Il signale ; le correctif passe par `plan-driven-dev` avec `behavior-driven-testing` en appui.
-- Le script ne modifie jamais la config de l'outil ni le seuil. Un ajustement de seuil est une décision, elle passe par un QCM et une entrée dans `invariants.md`.
+**Two prohibitions**:
+- The script never writes a test. It reports; the fix goes through `plan-driven-dev` with `behavior-driven-testing` in support.
+- The script never changes the tool's config or the threshold. Adjusting a threshold is a decision, it goes through a multiple-choice question and an entry in `invariants.md`.
 
-Si le projet est multi-modules avec plusieurs stacks (typique d'un monorepo back + front), générer **un wrapper par stack** avec le même contrat, et un `run_mutation.sh` racine qui les appelle et agrège les scores. Le contrat de sortie reste le même ; seule la ligne `outil:` change.
+If the project is multi-module with several stacks (typical of a back + front monorepo), generate **one wrapper per stack** with the same contract, plus a root `run_mutation.sh` that calls them and aggregates the scores. The output contract stays the same; only the `tool:` line changes.
 
-#### c) Entrées dans `invariants.md`
+#### c) Entries in `invariants.md`
 
-Le seuil de mutation est un invariant à part entière et suit la même numérotation `INV-NNN`, avec un champ supplémentaire :
+The mutation threshold is an invariant in its own right and follows the same `INV-NNN` numbering, with one extra field:
 
 ```markdown
-## INV-012 — Score de mutation du domaine ≥ 75%
+## INV-012 — Domain mutation score ≥ 75%
 
-- **Statut** : actif
-- **Source** : brique D du harness, périmètre « domaine critique »
-- **Périmètre** : `src/domaine/**`
-- **Script** : `tools/harness/run_mutation.sh --scope critical`
-- **Sévérité** : warn (→ error prévu après stabilisation)
-- **Baseline** : 78.4% mesuré le AAAA-MM-JJ
-- **Remédiation** : lire les mutants survivants listés par le script. Pour chacun,
-  identifier le comportement non protégé et ajouter un test qui l'exprime. Ne jamais
-  ajouter un test dont la seule justification est de tuer un mutant — si un mutant
-  survivant ne correspond à aucun comportement qui compte, l'exclure explicitement
-  dans la config avec un commentaire justifiant l'exclusion.
+- **Status**: active
+- **Source**: harness block D, "critical domain" scope
+- **Scope**: `src/domain/**`
+- **Script**: `tools/harness/run_mutation.sh --scope critical`
+- **Severity**: warn (→ error planned once stabilised)
+- **Baseline**: 78.4% measured on YYYY-MM-DD
+- **Remediation**: read the surviving mutants the script lists. For each one,
+  identify the unprotected behavior and add a test that expresses it. Never add
+  a test whose only justification is killing a mutant — if a surviving mutant
+  matches no behavior that matters, exclude it explicitly in the config with a
+  comment justifying the exclusion.
 ```
 
-**La règle du seuil** : le seuil initial est fixé **à la baseline mesurée, arrondie vers le bas**, jamais à un chiffre rond aspirationnel. Son rôle est d'empêcher la régression. On le relève ensuite par paliers explicites, chacun validé par QCM.
+Like every entry in `invariants.md`, this one is written in the target project's language.
 
-## 5.4 — Intégration
+**The threshold rule**: the initial threshold is set **at the measured baseline, rounded down**, never at an aspirational round number. Its role is to prevent regression. It is then raised by explicit steps, each one validated through a multiple-choice question.
 
-Comme pour les autres briques, l'agent présente le snippet et demande la permission avant d'écrire.
+## 5.4 — Integration
 
-Deux règles spécifiques à cette brique :
+As with the other blocks, the agent presents the snippet and asks permission before writing.
 
-- **Jamais en pre-commit.** Le temps d'exécution est incompatible avec un hook local. Si l'utilisateur le demande quand même, expliquer pourquoi c'est une mauvaise idée avant de suivre sa décision.
-- **`warn` obligatoire au premier passage.** Passer un seuil de mutation en CI bloquante dès l'installation garantit une CI rouge et un check désactivé dans la semaine.
+Two rules specific to this block:
+
+- **Never in pre-commit.** The run time is incompatible with a local hook. If the user asks for it anyway, explain why it is a bad idea before following their decision.
+- **`warn` is mandatory on the first pass.** Putting a mutation threshold in blocking CI right at install time guarantees a red CI and a check disabled within the week.
 
 ```yaml
-# GitHub Actions — mutation incrémentale sur les MR
+# GitHub Actions — incremental mutation on MRs
 - name: Harness — mutation (diff)
   run: bash tools/harness/run_mutation.sh --scope diff
-  continue-on-error: true   # retirer quand le seuil est stabilisé
+  continue-on-error: true   # remove once the threshold is stable
 ```
 
 ```yaml
-# GitHub Actions — mutation nocturne sur le domaine critique
+# GitHub Actions — nightly mutation on the critical domain
 on:
   schedule:
     - cron: '0 2 * * *'
 jobs:
   mutation:
     steps:
-      - name: Harness — mutation (domaine critique)
+      - name: Harness — mutation (critical domain)
         run: bash tools/harness/run_mutation.sh --scope critical
 ```
 
-Sur GitLab CI, transposer avec un job `rules: - if: $CI_PIPELINE_SOURCE == "merge_request_event"` pour l'incrémental et un `schedule` pour le nocturne.
+On GitLab CI, transpose with a job under `rules: - if: $CI_PIPELINE_SOURCE == "merge_request_event"` for the incremental one and a `schedule` for the nightly one.
 
 ---

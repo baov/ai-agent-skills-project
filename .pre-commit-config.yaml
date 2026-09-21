@@ -1,14 +1,20 @@
-# Validation des skills contre la spécification Agent Skills.
-# Un check non exécuté n'est pas un check : cette règle s'applique au dépôt
-# qui l'énonce.
+# Validates skills against the Agent Skills specification, and the repository
+# against its own translation glossary.
+# A check that never runs is not a check: that rule applies to the repository
+# that states it.
 #
-# Installation : pip install pre-commit && pre-commit install
+# Install: pip install pre-commit && pre-commit install
 repos:
   - repo: local
     hooks:
       - id: validate-skills
-        name: skills conformes à la spec Agent Skills
+        name: skills conform to the Agent Skills spec
         entry: python3 tools/validate-skills.py --root .
         language: system
         pass_filenames: false
         files: ^skills/.*\.md$
+      - id: check-glossary
+        name: repository is English, and on-glossary
+        entry: tools/check-glossary.sh
+        language: system
+        pass_filenames: false

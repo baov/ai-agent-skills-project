@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
-"""Brique B — pont test-cases <-> tests reels.
+"""Block B -- test-case bridge to the real tests.
 
-Verifie que chaque scenario documente sous docs/business/test-cases/ pointe vers un
-test automatise qui existe reellement, et signale les tests sans test-case.
+Checks that every scenario documented under docs/business/test-cases/ points at an
+automated test that really exists, and reports tests with no test-case.
 
-Contrat harness (voir references/templates.md section 6) :
-  --explain          decrit la regle sans rien verifier
-  --root <chemin>    racine du projet (defaut : repertoire courant)
-  sortie             path:line: [INV-NNN] message -- remediation
-  code 0             tout est coherent
-  code 1             au moins un covered_broken (severite error)
-  code 2             uniquement des warns (pending, orphelins)
+Harness contract (see references/templates.md section 6):
+  --explain          describes the rule without checking anything
+  --root <path>      project root (default: current directory)
+  output             path:line: [INV-NNN] message -- remediation
+  code 0             everything is consistent
+  code 1             at least one covered_broken (severity error)
+  code 2             warns only (pending, orphans)
 
-Aucune dependance externe : le front-matter est parse a la main pour que le
-script tourne en CI minimale.
+No external dependency: the front-matter is parsed by hand so that the script
+runs on a minimal CI.
+
+This starter speaks English; the script generated for a project writes its
+messages in that project's language.
 """
 
 from __future__ import annotations
@@ -28,7 +31,7 @@ INVARIANT_ID = "INV-002"
 
 TEST_CASES_DIR = Path("docs/business/test-cases")
 
-# Ou chercher les tests reels, par ordre de frequence. Adapter au projet.
+# Where to look for the real tests, in order of frequency. Adapt to the project.
 TEST_GLOBS = (
     "**/test_*.py",
     "**/*_test.py",
@@ -56,11 +59,11 @@ VALID_STATUS = {"covered", "pending", "manual"}
 # --------------------------------------------------------------------------- #
 
 def parse_front_matter(path: Path) -> tuple[dict[str, str], int]:
-    """Retourne (champs, ligne de fin du front-matter).
+    """Returns (fields, line where the front-matter ends).
 
-    Parseur volontairement minimal : cles plates, valeurs scalaires, commentaires
-    en fin de ligne ignores. Suffisant pour le front-matter des test-cases et
-    evite une dependance YAML.
+    A deliberately minimal parser: flat keys, scalar values, trailing comments
+    ignored. Enough for the test-case front-matter, and it avoids a YAML
+    dependency.
     """
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
@@ -84,7 +87,7 @@ def parse_front_matter(path: Path) -> tuple[dict[str, str], int]:
 
 
 def split_reference(reference: str) -> tuple[str, str | None]:
-    """`tests/test_panier.py::test_ajout` -> ('tests/test_panier.py', 'test_ajout')."""
+    """`tests/test_cart.py::test_add` -> ('tests/test_cart.py', 'test_add')."""
     if "::" in reference:
         file_part, _, test_part = reference.partition("::")
         return file_part.strip(), test_part.strip() or None
@@ -124,8 +127,8 @@ def check(root: Path) -> Report:
 
     if not cases_root.is_dir():
         print(
-            f"{TEST_CASES_DIR}: [{INVARIANT_ID}] dossier de test-cases introuvable "
-            f"-- lance `codebase-cartographer` ou desactive la brique B",
+            f"{TEST_CASES_DIR}: [{INVARIANT_ID}] test-cases folder not found "
+            f"-- run `codebase-cartographer`, or turn block B off",
             file=sys.stderr,
         )
         return report
@@ -138,7 +141,7 @@ def check(root: Path) -> Report:
 
         if not fields:
             report.malformed.append(
-                (relative, 1, "front-matter absent ou illisible")
+                (relative, 1, "front-matter missing or unreadable")
             )
             continue
 
@@ -146,7 +149,7 @@ def check(root: Path) -> Report:
         if status not in VALID_STATUS:
             report.malformed.append(
                 (relative, end_line or 1,
-                 f"champ `status` invalide ({status or 'vide'})")
+                 f"invalid `status` field ({status or 'empty'})")
             )
             continue
 
@@ -165,7 +168,7 @@ def check(root: Path) -> Report:
         if not target.is_file():
             report.covered_broken.append(
                 (relative, end_line or 1,
-                 f"le fichier de test `{file_part}` n'existe pas")
+                 f"the test file `{file_part}` does not exist")
             )
             continue
 
@@ -179,7 +182,7 @@ def check(root: Path) -> Report:
             if test_name not in content:
                 report.covered_broken.append(
                     (relative, end_line or 1,
-                     f"le test `{test_name}` est introuvable dans `{file_part}`")
+                     f"the test `{test_name}` is nowhere to be found in `{file_part}`")
                 )
                 continue
 
@@ -194,35 +197,35 @@ def check(root: Path) -> Report:
 
 
 # --------------------------------------------------------------------------- #
-# Sortie
+# Output
 # --------------------------------------------------------------------------- #
 
 def emit(report: Report) -> int:
     for path, line, reason in report.covered_broken:
         print(
-            f"{path}:{line}: [{INVARIANT_ID}] test-case marque `covered` mais {reason} "
-            f"-- corrige le champ `automated_test`, ou repasse le test-case en "
-            f"`status: pending` si le test a ete supprime volontairement"
+            f"{path}:{line}: [{INVARIANT_ID}] test-case marked `covered` but {reason} "
+            f"-- fix the `automated_test` field, or move the test-case back to "
+            f"`status: pending` if the test was deleted on purpose"
         )
 
     for path, line, reason in report.malformed:
         print(
             f"{path}:{line}: [{INVARIANT_ID}] {reason} "
-            f"-- ajoute un front-matter conforme (voir references/templates.md section 2)"
+            f"-- add a conforming front-matter (see references/templates.md section 2)"
         )
 
     for path, line in report.pending:
         print(
-            f"{path}:{line}: [{INVARIANT_ID}] test-case sans test automatise "
-            f"-- ecris le test puis renseigne `automated_test`, ou passe en "
-            f"`status: manual` s'il ne sera jamais automatise"
+            f"{path}:{line}: [{INVARIANT_ID}] test-case with no automated test "
+            f"-- write the test then fill in `automated_test`, or move it to "
+            f"`status: manual` if it will never be automated"
         )
 
     for path in report.orphans:
         print(
-            f"{path}:1: [{INVARIANT_ID}] fichier de test sans test-case associe "
-            f"-- cree le test-case correspondant sous {TEST_CASES_DIR}/, ou ajoute "
-            f"ce chemin aux exclusions s'il s'agit d'un test purement technique"
+            f"{path}:1: [{INVARIANT_ID}] test file with no test-case attached "
+            f"-- create the matching test-case under {TEST_CASES_DIR}/, or add "
+            f"this path to the exclusions if it is a purely technical test"
         )
 
     total = (
@@ -230,10 +233,10 @@ def emit(report: Report) -> int:
         + len(report.pending) + len(report.manual) + len(report.malformed)
     )
     print(
-        f"\n{total} test-cases : {len(report.covered_ok)} covered_ok, "
+        f"\n{total} test-cases: {len(report.covered_ok)} covered_ok, "
         f"{len(report.covered_broken)} covered_broken, {len(report.pending)} pending, "
-        f"{len(report.manual)} manual, {len(report.malformed)} malformes. "
-        f"{len(report.orphans)} test(s) orphelin(s).",
+        f"{len(report.manual)} manual, {len(report.malformed)} malformed. "
+        f"{len(report.orphans)} orphan test(s).",
         file=sys.stderr,
     )
 
@@ -245,32 +248,32 @@ def emit(report: Report) -> int:
 
 
 EXPLANATION = f"""\
-[{INVARIANT_ID}] Pont test-cases <-> tests reels
+[{INVARIANT_ID}] Test-case bridge to the real tests
 
-Chaque scenario sous {TEST_CASES_DIR}/ porte un front-matter YAML dont le champ
-`automated_test` designe le test qui le couvre, au format <chemin>::<nom du test>.
+Every scenario under {TEST_CASES_DIR}/ carries a YAML front-matter whose
+`automated_test` field names the test covering it, as <path>::<test name>.
 
-Ce script verifie que la reference pointe vers un fichier et un test qui existent
-vraiment, et signale les fichiers de test qu'aucun test-case ne mentionne.
+This script checks that the reference points at a file and a test that really
+exist, and reports the test files no test-case mentions.
 
-Severites :
-  error  covered_broken (reference cassee), front-matter malforme
-  warn   pending (scenario non automatise), test orphelin
+Severities:
+  error  covered_broken (broken reference), malformed front-matter
+  warn   pending (scenario not automated), orphan test
 
-Limite connue : ce check verifie l'EXISTENCE d'un test, jamais sa valeur. Un test
-reference peut n'asserter rien du tout. C'est la brique D (mutation testing) qui
-repond a cette question.
+Known limit: this check verifies that a test EXISTS, never what it is worth. A
+referenced test may assert nothing at all. That question belongs to block D
+(mutation testing).
 """
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Verifie la coherence entre test-cases documentes et tests reels."
+        description="Checks the consistency between documented test-cases and real tests."
     )
     parser.add_argument("--explain", action="store_true",
-                        help="decrit la regle sans rien verifier")
+                        help="describes the rule without checking anything")
     parser.add_argument("--root", default=".",
-                        help="racine du projet (defaut : repertoire courant)")
+                        help="project root (default: current directory)")
     args = parser.parse_args()
 
     if args.explain:
@@ -279,7 +282,7 @@ def main() -> int:
 
     root = Path(args.root).resolve()
     if not root.is_dir():
-        print(f"racine introuvable : {root}", file=sys.stderr)
+        print(f"root not found: {root}", file=sys.stderr)
         return 1
 
     return emit(check(root))

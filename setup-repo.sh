@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 #
-# Crée le dépôt GitHub privé et pousse le contenu de ce dossier.
+# Creates the private GitHub repository and pushes this folder's contents.
 #
-#   ./setup-repo.sh [nom-du-depot]
+#   ./setup-repo.sh [repo-name]
 #
-# Utilise TON authentification gh — aucun token n'est écrit ni stocké ici.
-# Prérequis : gh (https://cli.github.com) et git.
+# Uses YOUR gh authentication — no token is written or stored here.
+# Requires: gh (https://cli.github.com) and git.
 #
 set -euo pipefail
 
-# Par défaut, le nom du dossier courant.
+# Defaults to the current folder's name.
 REPO_NAME="${1:-$(basename "$PWD")}"
 
-# --- vérifications --------------------------------------------------------
-command -v git >/dev/null || { echo "git introuvable."; exit 1; }
+# --- checks ---------------------------------------------------------------
+command -v git >/dev/null || { echo "git not found."; exit 1; }
 command -v gh  >/dev/null || {
-  echo "gh introuvable. Installe GitHub CLI : https://cli.github.com"
+  echo "gh not found. Install GitHub CLI: https://cli.github.com"
   exit 1
 }
 
 if ! gh auth status >/dev/null 2>&1; then
-  echo "Tu n'es pas authentifié auprès de GitHub. Lance d'abord :"
+  echo "You are not authenticated with GitHub. Run this first:"
   echo "    gh auth login"
   exit 1
 fi
@@ -28,19 +28,19 @@ fi
 OWNER=$(gh api user --jq .login)
 
 if gh repo view "$OWNER/$REPO_NAME" >/dev/null 2>&1; then
-  echo "Le dépôt $OWNER/$REPO_NAME existe déjà."
-  echo "Choisis un autre nom : ./setup-repo.sh <nom>"
+  echo "Repository $OWNER/$REPO_NAME already exists."
+  echo "Pick another name: ./setup-repo.sh <name>"
   exit 1
 fi
 
 # --- confirmation ---------------------------------------------------------
 echo
-echo "  Dépôt      : $OWNER/$REPO_NAME"
-echo "  Visibilité : privé"
-echo "  Fichiers   : $(find . -type f -not -path './.git/*' | wc -l | tr -d ' ')"
+echo "  Repository : $OWNER/$REPO_NAME"
+echo "  Visibility : private"
+echo "  Files      : $(find . -type f -not -path './.git/*' | wc -l | tr -d ' ')"
 echo
-read -r -p "Créer et pousser ? [o/N] " answer
-[[ "$answer" =~ ^[oOyY]$ ]] || { echo "Annulé."; exit 0; }
+read -r -p "Create and push? [y/N] " answer
+[[ "$answer" =~ ^[yY]$ ]] || { echo "Canceled."; exit 0; }
 
 # --- init + commit --------------------------------------------------------
 if [ ! -d .git ]; then
@@ -49,15 +49,15 @@ if [ ! -d .git ]; then
 fi
 
 git add .
-git diff --cached --quiet || git commit -q -m "Skills de développement logiciel pour agents IA"
+git diff --cached --quiet || git commit -q -m "Software development skills for AI agents"
 
-# --- création + push ------------------------------------------------------
+# --- create + push --------------------------------------------------------
 gh repo create "$REPO_NAME" \
   --private \
   --source=. \
   --remote=origin \
-  --description "Proof Over Vibes — agent skills : documentation, enforcement, revue" \
+  --description "Proof Over Vibes — agent skills: documentation, enforcement, review" \
   --push
 
 echo
-echo "Terminé : $(gh repo view "$OWNER/$REPO_NAME" --json url --jq .url)"
+echo "Done: $(gh repo view "$OWNER/$REPO_NAME" --json url --jq .url)"

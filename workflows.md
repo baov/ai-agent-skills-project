@@ -1,157 +1,157 @@
-# Workflows — enchaînement des skills
+# Workflows — chaining the skills
 
-Neuf skills, deux familles, et une règle : les artefacts circulent, les skills ne s'appellent pas dans le vide.
+Ten skills, two families, and one rule: artifacts circulate, and skills are never called into a vacuum.
 
-## Deux familles
+## Two families
 
-**Points d'entrée** — invoqués par une demande de l'utilisateur.
+**Entry points** — invoked by a user request.
 
-| Skill | Déclencheur | Produit |
+| Skill | Trigger | Produces |
 |---|---|---|
-| `codebase-cartographer` | « documente le projet » | `docs/business/`, `docs/technical/`, section dans `AGENTS.md` |
-| `codebase-harness` | « mets en place les garde-fous » | `tools/harness/`, `docs/technical/invariants.md` |
-| `ai-code-remediation` | « audite ce codebase » | `.audit/<projet>-<date>.md` + plan de remédiation |
-| `systematic-debugging` | « pourquoi ça plante » | Cause racine prouvée (pas de fichier) |
-| `plan-driven-dev` | « implémente », « corrige » | `.plans/done/<slug>.md`, `.plans/FEEDBACK.md` |
-| `premerge-review` | « relis ma branche » | `.reviews/<branche>-<date>.md` + verdict |
-| `code-assimilation-quiz` | « fais-moi un quiz » — **jamais automatique** | Rien (apprentissage) |
+| `codebase-cartographer` | "document the project" | `docs/business/`, `docs/technical/`, a section in `AGENTS.md` |
+| `codebase-harness` | "set up the guardrails" | `tools/harness/`, `docs/technical/invariants.md` |
+| `ai-code-remediation` | "audit this codebase" | `.audit/<project>-<date>.md` + a remediation plan |
+| `systematic-debugging` | "why does this crash" | A proven root cause (no file) |
+| `plan-driven-dev` | "implement", "fix" | `.plans/done/<slug>.md`, `.plans/FEEDBACK.md` |
+| `premerge-review` | "review my branch" | `.reviews/<branch>-<date>.md` + a verdict |
+| `code-assimilation-quiz` | "quiz me" — **never automatic** | Nothing (learning) |
 
-**Skills d'appui** — chargés par un autre skill, rarement demandés directement.
+**Supporting skills** — loaded by another skill, rarely requested directly.
 
-| Skill | Chargé par | Rôle |
+| Skill | Loaded by | Role |
 |---|---|---|
-| `behavior-driven-testing` | `plan-driven-dev` (étapes 5-6), `ai-code-remediation` (S3) | Doctrine de test |
-| `ddd-advisor` | `ai-code-remediation` (quand S8 domine) | Qualification de conception |
-| `clarify-with-choices` | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` | Forme des QCM de validation, et mode dégradé si l'agent hôte n'a pas d'outil de question |
+| `behavior-driven-testing` | `plan-driven-dev` (steps 5-6), `ai-code-remediation` (S3) | Test doctrine |
+| `ddd-advisor` | `ai-code-remediation` (when S8 dominates) | Design qualification |
+| `clarify-with-choices` | `codebase-cartographer`, `codebase-harness`, `ddd-advisor` | Shapes the validation multiple-choice questions, and the degraded mode when the host agent has no question tool |
 
 ---
 
-## Scénario 1 — Nouvelle feature sur un projet outillé
+## Scenario 1 — A new feature on a tooled project
 
-Le cas nominal, celui pour lequel la chaîne a été pensée.
+The nominal case, the one the chain was designed for.
 
 ```
 plan-driven-dev
-  étape 1   lit invariants.md + tools/harness/ + .plans/FEEDBACK.md
-  étape 3   plan validé, invariants applicables notés en section 3
-  étape 5   TDD ; les invariants tournent à chaque passage au vert
-            └─ charge behavior-driven-testing pour les frontières de test
-  étape 6   suite complète + run_all.sh + check_test_coverage
+  step 1    reads invariants.md + tools/harness/ + .plans/FEEDBACK.md
+  step 3    plan validated, applicable invariants noted in section 3
+  step 5    TDD; the invariants run on every return to green
+            └─ loads behavior-driven-testing for the test boundaries
+  step 6    full suite + run_all.sh + check_test_coverage
        ↓
 premerge-review
-  phase 2   criticité déterminée
-  phase 3   gauntlet — vert par construction si l'étape 6 a été faite
-  phase 4   test-cases d'abord (si critique), puis les quatre axes
-  phase 6   verdict GO/NO-GO
+  phase 2   criticality determined
+  phase 3   gauntlet — green by construction if step 6 was done
+  phase 4   test-cases first (if critical), then the four angles
+  phase 6   GO/NO-GO verdict
        ↓
-code-assimilation-quiz   (optionnel, sur demande explicite)
+code-assimilation-quiz   (optional, on explicit request)
 ```
 
-**Le point qui compte** : l'étape 6 de `plan-driven-dev` rejoue exactement le gauntlet de la phase 3 de `premerge-review`. Une revue arrêtée par un check mécanique signale que l'étape 6 a été bâclée.
+**The point that matters**: step 6 of `plan-driven-dev` replays exactly the gauntlet of phase 3 of `premerge-review`. A review stopped by a mechanical check means step 6 was rushed.
 
 ---
 
-## Scénario 2 — Bug en production
+## Scenario 2 — A production bug
 
 ```
-systematic-debugging      diagnostic uniquement, jusqu'à la cause prouvée
-       ↓                  ne jamais corriger ici
-plan-driven-dev           la cause racine devient l'entrée de l'étape 2
+systematic-debugging      diagnosis only, up to the proven cause
+       ↓                  never fix here
+plan-driven-dev           the root cause becomes the input to step 2
        ↓
-premerge-review           criticité relevée d'office si le bug touche la sécurité
+premerge-review           criticality raised automatically if the bug touches security
 ```
 
-**L'erreur classique** : corriger pendant le diagnostic. La séparation existe parce qu'un correctif appliqué avant la preuve masque souvent le vrai problème.
+**The classic mistake**: fixing during the diagnosis. The separation exists because a fix applied before the proof usually masks the real problem.
 
 ---
 
-## Scénario 3 — Codebase vibe-codé qu'on récupère
+## Scenario 3 — Inheriting a vibe-coded codebase
 
 ```
 ai-code-remediation
-  phase 1   signaux mesurés, dont le score de mutation sur échantillon
-  phase 2   les huit symptômes
-            └─ si S8 domine → ddd-advisor
-            └─ si S3 suspecté → le score de mutation le prouve ou l'infirme
-  phase 4   plan découpé en chantiers
+  phase 1   signals measured, including a sampled mutation score
+  phase 2   the eight symptoms
+            └─ if S8 dominates → ddd-advisor
+            └─ if S3 is suspected → the mutation score proves or disproves it
+  phase 4   plan cut into worksites
        ↓
-codebase-cartographer     si l'absence de doc est elle-même un finding
+codebase-cartographer     if the missing documentation is itself a finding
        ↓
-plan-driven-dev           un passage par chantier
+plan-driven-dev           one pass per worksite
        ↓
-codebase-harness          en dernier — les décisions de remédiation
-                          deviennent des invariants exécutables
+codebase-harness          last — the remediation decisions
+                          become executable invariants
 ```
 
-**Pourquoi le harness arrive à la fin** : il fige des règles. Les figer avant de savoir lesquelles comptent produit un harness qu'on désactive au premier build rouge. L'audit fournit aussi la baseline de mutation.
+**Why the harness comes last**: it freezes rules. Freezing them before knowing which ones matter produces a harness everyone disables at the first red build. The audit also supplies the mutation baseline.
 
 ---
 
-## Scénario 4 — Outiller un projet sain
+## Scenario 4 — Tooling a healthy project
 
 ```
-codebase-cartographer     ADR, architecture, test-cases
+codebase-cartographer     ADRs, architecture, test-cases
        ↓
 codebase-harness
-  brique A   les ADR deviennent des linters — commencer en `warn`
-  brique B   front-matter sur les test-cases
-  brique D   mutation testing — périmètre calibré sur les `priorite: critique`
-  brique C   doc-gardening
+  block A    the ADRs become linters — start in `warn`
+  block B    front-matter on the test-cases
+  block D    mutation testing — scope calibrated on the `priority: critical` cases
+  block C    doc-gardening
 ```
 
-L'ordre A → B → D → C est imposé : D cible son périmètre à partir des test-cases priorisés par B.
+The order A → B → D → C is mandatory: D targets its scope from the test-cases prioritized by B.
 
-**Deux semaines en `warn` avant de passer en `error`.** Un linter bloquant sur du code existant non conforme arrête toute l'équipe.
+**Two weeks in `warn` before switching to `error`.** A blocking linter on existing non-conformant code stops the whole team.
 
 ---
 
-## Scénario 5 — « Mes tests ne servent à rien »
+## Scenario 5 — "My tests are worthless"
 
 ```
-behavior-driven-testing   diagnostic de doctrine : que testent-ils vraiment ?
+behavior-driven-testing   doctrine diagnosis: what do they actually test?
        ↓
-codebase-harness          brique D seule — mesurer avant de conclure
+codebase-harness          block D alone — measure before concluding
 ```
 
-Un score de mutation transforme une impression en chiffre. Si les tests sont effectivement creux, la réécriture passe par `plan-driven-dev`, un comportement à la fois.
+A mutation score turns an impression into a number. If the tests really are hollow, the rewrite goes through `plan-driven-dev`, one behavior at a time.
 
 ---
 
-## Circulation des artefacts
+## How the artifacts circulate
 
-C'est ce tableau qui fait la cohérence de l'ensemble : chaque fichier produit par un skill est lu par un autre.
+This table is what makes the whole coherent: every file one skill produces is read by another.
 
-| Artefact | Écrit par | Lu par |
+| Artifact | Written by | Read by |
 |---|---|---|
-| `docs/business/glossary.md` | cartographer | premerge-review (axe 3), ddd-advisor |
-| `docs/business/test-cases/**` | cartographer | harness (B décore), premerge-review (phase 4) |
-| `docs/technical/adr/**` | cartographer | harness (A extrait), premerge-review (axe 3) |
-| `docs/technical/invariants.md` | harness | plan-driven-dev (étape 1), premerge-review (phase 1) |
-| `tools/harness/*` | harness | plan-driven-dev (étape 5), premerge-review (phase 3) |
-| `.plans/FEEDBACK.md` | plan-driven-dev | plan-driven-dev (étape 1, tâches suivantes) |
-| `.reviews/<branche>.md` | premerge-review | plan-driven-dev (entrée du correctif) |
-| `.audit/<projet>.md` | ai-code-remediation | plan-driven-dev (un chantier par passage) |
+| `docs/business/glossary.md` | cartographer | premerge-review (angle 3), ddd-advisor |
+| `docs/business/test-cases/**` | cartographer | harness (B decorates), premerge-review (phase 4) |
+| `docs/technical/adr/**` | cartographer | harness (A extracts), premerge-review (angle 3) |
+| `docs/technical/invariants.md` | harness | plan-driven-dev (step 1), premerge-review (phase 1) |
+| `tools/harness/*` | harness | plan-driven-dev (step 5), premerge-review (phase 3) |
+| `.plans/FEEDBACK.md` | plan-driven-dev | plan-driven-dev (step 1, later tasks) |
+| `.reviews/<branch>.md` | premerge-review | plan-driven-dev (input to the fix) |
+| `.audit/<project>.md` | ai-code-remediation | plan-driven-dev (one worksite per pass) |
 
-**Mode dégradé** : chaque skill fonctionne sans ces fichiers, mais le dit. Dans `premerge-review`, l'absence de référentiel **augmente** la profondeur de revue au lieu de la réduire.
+**Degraded mode**: every skill works without these files, but says so. In `premerge-review`, a missing reference **increases** the review depth instead of reducing it.
 
 ---
 
-## Erreurs de chaînage
+## Chaining mistakes
 
-| Ce qu'on fait | Pourquoi c'est raté |
+| What people do | Why it misses |
 |---|---|
-| `premerge-review` pour apprendre le code | C'est `code-assimilation-quiz`. La revue cherche des défauts, pas à enseigner. |
-| `premerge-review` sur un codebase entier | C'est `ai-code-remediation`. La revue travaille sur un diff. |
-| `ai-code-remediation` sur une branche | Inverse du précédent. |
-| `codebase-harness` avant `codebase-cartographer` | Marche, mais l'agent devra poser à la main toutes les questions d'architecture. |
-| Corriger pendant `systematic-debugging` | Le skill s'arrête à la cause prouvée, par construction. |
-| `code-assimilation-quiz` déclenché tout seul | Interdit : uniquement sur demande explicite. |
-| Mutation testing dans la boucle TDD | Trop lent. Sa place est au gauntlet et en CI. |
+| `premerge-review` to learn the code | That is `code-assimilation-quiz`. A review hunts defects, it does not teach. |
+| `premerge-review` on a whole codebase | That is `ai-code-remediation`. A review works on a diff. |
+| `ai-code-remediation` on a branch | The inverse of the above. |
+| `codebase-harness` before `codebase-cartographer` | It works, but the agent will have to ask every architecture question by hand. |
+| Fixing during `systematic-debugging` | The skill stops at the proven cause, by construction. |
+| `code-assimilation-quiz` triggering on its own | Forbidden: explicit request only. |
+| Mutation testing inside the TDD loop | Too slow. Its place is the gauntlet and CI. |
 
 ---
 
-## Un principe transversal
+## One principle across the board
 
-Trois skills modulent leur profondeur sur la **criticité** : `systematic-debugging`, `premerge-review`, `codebase-harness` (brique D).
+Three skills modulate their depth on **criticality**: `systematic-debugging`, `premerge-review`, `codebase-harness` (block D).
 
-La criticité module ce qu'on regarde et à quelle profondeur — jamais le périmètre, jamais le seuil de blocage. Un diff est lu en entier quelle que soit sa criticité, et un gauntlet rouge reste un NO-GO.
+Criticality modulates what gets looked at and how deeply — never the scope, never the blocking threshold. A diff is read in full whatever its criticality, and a red gauntlet stays a NO-GO.

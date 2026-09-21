@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Valide les skills du dépôt contre la spécification Agent Skills.
+"""Validates this repository's skills against the Agent Skills specification.
 
-Référence : https://agentskills.io/specification
+Reference: https://agentskills.io/specification
 
-Le validateur officiel `skills-ref` se déclare réservé à la démonstration et
-s'installe depuis un checkout git : inaccessible en pre-commit. Ce script le
-remplace en respectant le contrat de `references/templates.md` (section 6) :
-`--explain`, `--root`, une ligne par violation, aucun auto-fix, aucune
-dépendance à installer.
+The official `skills-ref` validator declares itself demo-only and installs from
+a git checkout: unusable in pre-commit. This script replaces it while honoring
+the contract in `references/templates.md` (section 6): `--explain`, `--root`,
+one line per violation, no auto-fix, no dependency to install.
 """
 
 import argparse
@@ -19,177 +18,177 @@ from pathlib import Path
 MAX_NAME = 64
 MAX_DESCRIPTION = 1024
 MAX_COMPATIBILITY = 500
-MAX_BODY_LINES = 500  # recommandation du spec, pas une règle : sévérité warn
+MAX_BODY_LINES = 500  # a spec recommendation, not a rule: severity warn
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
-REGLES = [
-    ("INV-SKILL-001", "error", "Chaque dossier de skill contient un SKILL.md"),
-    ("INV-SKILL-002", "error", "SKILL.md ouvre sur un frontmatter YAML délimité par ---"),
-    ("INV-SKILL-003", "error", f"`name` : 1-{MAX_NAME} caractères, [a-z0-9-], sans tiret en tête/fin ni double tiret"),
-    ("INV-SKILL-004", "error", "`name` est identique au nom du dossier parent"),
-    ("INV-SKILL-005", "error", f"`description` présente, non vide, ≤ {MAX_DESCRIPTION} caractères"),
-    ("INV-SKILL-006", "error", f"`compatibility`, si présent, ≤ {MAX_COMPATIBILITY} caractères"),
-    ("INV-SKILL-007", "warn", f"Le corps de SKILL.md reste sous {MAX_BODY_LINES} lignes"),
+RULES = [
+    ("INV-SKILL-001", "error", "Every skill folder holds a SKILL.md"),
+    ("INV-SKILL-002", "error", "SKILL.md opens on a YAML frontmatter delimited by ---"),
+    ("INV-SKILL-003", "error", f"`name`: 1-{MAX_NAME} characters, [a-z0-9-], no leading/trailing or double hyphen"),
+    ("INV-SKILL-004", "error", "`name` matches the parent folder name"),
+    ("INV-SKILL-005", "error", f"`description` present, non-empty, <= {MAX_DESCRIPTION} characters"),
+    ("INV-SKILL-006", "error", f"`compatibility`, if present, <= {MAX_COMPATIBILITY} characters"),
+    ("INV-SKILL-007", "warn", f"The SKILL.md body stays under {MAX_BODY_LINES} lines"),
 ]
 
 
-def expliquer() -> None:
-    print("Validation des skills contre la spécification Agent Skills")
-    print("Périmètre : tout sous-dossier de skills/ contenant un SKILL.md\n")
-    for code, severite, enonce in REGLES:
-        print(f"  {code} [{severite:5}] {enonce}")
-    print("\nCodes de sortie : 0 conforme · 1 violation error · 2 uniquement des warn")
+def explain() -> None:
+    print("Validating skills against the Agent Skills specification")
+    print("Scope: every subfolder of skills/ holding a SKILL.md\n")
+    for code, severity, statement in RULES:
+        print(f"  {code} [{severity:5}] {statement}")
+    print("\nExit codes: 0 conformant - 1 error violation - 2 warnings only")
 
 
-def lire_frontmatter(lignes):
-    """Retourne (champs, ligne_de_fin) ou (None, 0) si le frontmatter est absent.
+def read_frontmatter(lines):
+    """Returns (fields, end_line), or (None, 0) if the frontmatter is missing.
 
-    Parseur volontairement minimal : le spec ne définit que des scalaires et un
-    `metadata` plat. Gère les blocs `>` et `|` et les continuations indentées.
+    Deliberately minimal parser: the spec defines only scalars and a flat
+    `metadata`. Handles `>` and `|` blocks and indented continuations.
     """
-    if not lignes or lignes[0].strip() != "---":
+    if not lines or lines[0].strip() != "---":
         return None, 0
 
-    fin = None
-    for i in range(1, len(lignes)):
-        if lignes[i].strip() == "---":
-            fin = i
+    end = None
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            end = i
             break
-    if fin is None:
+    if end is None:
         return None, 0
 
-    champs, cle_courante = {}, None
-    for ligne in lignes[1:fin]:
-        entete = re.match(r"^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$", ligne)
-        if entete:
-            cle_courante = entete.group(1)
-            valeur = entete.group(2).strip()
-            champs[cle_courante] = "" if valeur in (">", "|", ">-", "|-") else valeur
-        elif cle_courante and ligne.strip() and ligne[:1] in (" ", "\t"):
-            suite = ligne.strip()
-            champs[cle_courante] = f"{champs[cle_courante]} {suite}".strip()
-        elif not ligne.strip():
+    fields, current_key = {}, None
+    for line in lines[1:end]:
+        header = re.match(r"^([A-Za-z][A-Za-z0-9_-]*):[ \t]*(.*)$", line)
+        if header:
+            current_key = header.group(1)
+            value = header.group(2).strip()
+            fields[current_key] = "" if value in (">", "|", ">-", "|-") else value
+        elif current_key and line.strip() and line[:1] in (" ", "\t"):
+            continuation = line.strip()
+            fields[current_key] = f"{fields[current_key]} {continuation}".strip()
+        elif not line.strip():
             continue
         else:
-            cle_courante = None
+            current_key = None
 
-    return champs, fin
-
-
-def compter_caracteres(texte: str) -> int:
-    """Compte en caractères Unicode normalisés NFC, jamais en octets."""
-    return len(unicodedata.normalize("NFC", texte))
+    return fields, end
 
 
-def valider_skill(dossier: Path, racine: Path, violations: list) -> None:
-    relatif = dossier.relative_to(racine)
-    skill_md = dossier / "SKILL.md"
+def count_characters(text: str) -> int:
+    """Counts NFC-normalized Unicode characters, never bytes."""
+    return len(unicodedata.normalize("NFC", text))
+
+
+def validate_skill(folder: Path, root: Path, violations: list) -> None:
+    relative = folder.relative_to(root)
+    skill_md = folder / "SKILL.md"
 
     if not skill_md.is_file():
         violations.append((
-            "error", f"{relatif}/: [INV-SKILL-001] dossier de skill sans SKILL.md"
-            f" — ajoute {relatif}/SKILL.md avec un frontmatter `name` et `description`"
+            "error", f"{relative}/: [INV-SKILL-001] skill folder without a SKILL.md"
+            f" — add {relative}/SKILL.md with a `name` and `description` frontmatter"
         ))
         return
 
-    chemin = skill_md.relative_to(racine)
-    lignes = skill_md.read_text(encoding="utf-8").splitlines()
-    champs, fin_frontmatter = lire_frontmatter(lignes)
+    path = skill_md.relative_to(root)
+    lines = skill_md.read_text(encoding="utf-8").splitlines()
+    fields, frontmatter_end = read_frontmatter(lines)
 
-    if champs is None:
+    if fields is None:
         violations.append((
-            "error", f"{chemin}:1: [INV-SKILL-002] frontmatter YAML absent ou non refermé"
-            " — la première ligne doit être `---`, suivie des champs, puis d'un `---` de fermeture"
+            "error", f"{path}:1: [INV-SKILL-002] YAML frontmatter missing or never closed"
+            " — line 1 must be `---`, then the fields, then a closing `---`"
         ))
         return
 
-    nom = champs.get("name", "").strip().strip("\"'")
-    if not nom:
+    name = fields.get("name", "").strip().strip("\"'")
+    if not name:
         violations.append((
-            "error", f"{chemin}:2: [INV-SKILL-003] champ `name` absent"
-            f" — ajoute `name: {dossier.name}`"
+            "error", f"{path}:2: [INV-SKILL-003] `name` field missing"
+            f" — add `name: {folder.name}`"
         ))
     else:
-        if compter_caracteres(nom) > MAX_NAME or not NAME_PATTERN.match(nom):
+        if count_characters(name) > MAX_NAME or not NAME_PATTERN.match(name):
             violations.append((
-                "error", f"{chemin}:2: [INV-SKILL-003] `name: {nom}` invalide"
-                f" — 1 à {MAX_NAME} caractères parmi [a-z0-9-], sans tiret en tête ou en fin,"
-                " sans double tiret"
+                "error", f"{path}:2: [INV-SKILL-003] `name: {name}` is invalid"
+                f" — 1 to {MAX_NAME} characters from [a-z0-9-], no leading or trailing hyphen,"
+                " no double hyphen"
             ))
-        if nom != dossier.name:
+        if name != folder.name:
             violations.append((
-                "error", f"{chemin}:2: [INV-SKILL-004] `name: {nom}` ≠ dossier `{dossier.name}`"
-                f" — renomme le champ en `{dossier.name}` ou renomme le dossier en `{nom}`"
+                "error", f"{path}:2: [INV-SKILL-004] `name: {name}` != folder `{folder.name}`"
+                f" — rename the field to `{folder.name}`, or rename the folder to `{name}`"
             ))
 
-    description = champs.get("description", "").strip().strip("\"'")
+    description = fields.get("description", "").strip().strip("\"'")
     if not description:
         violations.append((
-            "error", f"{chemin}:3: [INV-SKILL-005] champ `description` absent ou vide"
-            " — décris ce que fait le skill ET quand l'utiliser : c'est le seul texte"
-            " chargé au démarrage, donc le seul déclencheur"
+            "error", f"{path}:3: [INV-SKILL-005] `description` field missing or empty"
+            " — say what the skill does AND when to use it: it is the only text"
+            " loaded at startup, so it is the only trigger"
         ))
     else:
-        taille = compter_caracteres(description)
-        if taille > MAX_DESCRIPTION:
+        size = count_characters(description)
+        if size > MAX_DESCRIPTION:
             violations.append((
-                "error", f"{chemin}:3: [INV-SKILL-005] `description` de {taille} caractères"
-                f" (max {MAX_DESCRIPTION}) — retire {taille - MAX_DESCRIPTION} caractères,"
-                " en coupant d'abord les déclencheurs redondants"
+                "error", f"{path}:3: [INV-SKILL-005] `description` is {size} characters"
+                f" (max {MAX_DESCRIPTION}) — cut {size - MAX_DESCRIPTION} characters,"
+                " starting with the redundant triggers"
             ))
 
-    compatibility = champs.get("compatibility", "").strip().strip("\"'")
+    compatibility = fields.get("compatibility", "").strip().strip("\"'")
     if compatibility:
-        taille = compter_caracteres(compatibility)
-        if taille > MAX_COMPATIBILITY:
+        size = count_characters(compatibility)
+        if size > MAX_COMPATIBILITY:
             violations.append((
-                "error", f"{chemin}:4: [INV-SKILL-006] `compatibility` de {taille} caractères"
-                f" (max {MAX_COMPATIBILITY}) — retire {taille - MAX_COMPATIBILITY} caractères"
+                "error", f"{path}:4: [INV-SKILL-006] `compatibility` is {size} characters"
+                f" (max {MAX_COMPATIBILITY}) — cut {size - MAX_COMPATIBILITY} characters"
             ))
 
-    corps = len(lignes) - (fin_frontmatter + 1)
-    if corps > MAX_BODY_LINES:
+    body = len(lines) - (frontmatter_end + 1)
+    if body > MAX_BODY_LINES:
         violations.append((
-            "warn", f"{chemin}:{fin_frontmatter + 2}: [INV-SKILL-007] corps de {corps} lignes"
-            f" (recommandé ≤ {MAX_BODY_LINES}) — déporte le détail dans references/ :"
-            " le corps entier est chargé en contexte dès que le skill s'active"
+            "warn", f"{path}:{frontmatter_end + 2}: [INV-SKILL-007] body is {body} lines"
+            f" (recommended <= {MAX_BODY_LINES}) — move the detail into references/:"
+            " the whole body is loaded into context the moment the skill activates"
         ))
 
 
 def main() -> int:
-    parseur = argparse.ArgumentParser(description="Valide les skills contre la spec Agent Skills.")
-    parseur.add_argument("--explain", action="store_true", help="décrit les règles sans rien vérifier")
-    parseur.add_argument("--root", default=".", help="racine du dépôt (défaut : répertoire courant)")
-    arguments = parseur.parse_args()
+    parser = argparse.ArgumentParser(description="Validates skills against the Agent Skills spec.")
+    parser.add_argument("--explain", action="store_true", help="describe the rules without checking anything")
+    parser.add_argument("--root", default=".", help="repository root (default: current directory)")
+    arguments = parser.parse_args()
 
     if arguments.explain:
-        expliquer()
+        explain()
         return 0
 
-    racine = Path(arguments.root).resolve()
-    dossier_skills = racine / "skills"
-    if not dossier_skills.is_dir():
-        print(f"{arguments.root}: aucun dossier skills/ — rien à valider", file=sys.stderr)
+    root = Path(arguments.root).resolve()
+    skills_folder = root / "skills"
+    if not skills_folder.is_dir():
+        print(f"{arguments.root}: no skills/ folder — nothing to validate", file=sys.stderr)
         return 1
 
     violations: list = []
-    dossiers = sorted(d for d in dossier_skills.iterdir() if d.is_dir())
-    for dossier in dossiers:
-        valider_skill(dossier, racine, violations)
+    folders = sorted(d for d in skills_folder.iterdir() if d.is_dir())
+    for folder in folders:
+        validate_skill(folder, root, violations)
 
-    for severite, message in violations:
+    for severity, message in violations:
         print(message)
 
-    erreurs = sum(1 for severite, _ in violations if severite == "error")
-    avertissements = len(violations) - erreurs
+    errors = sum(1 for severity, _ in violations if severity == "error")
+    warnings = len(violations) - errors
 
     if not violations:
-        print(f"{len(dossiers)} skills validés, aucune violation.")
+        print(f"{len(folders)} skills validated, no violation.")
         return 0
 
-    print(f"\n{len(dossiers)} skills validés — {erreurs} error, {avertissements} warn.", file=sys.stderr)
-    return 1 if erreurs else 2
+    print(f"\n{len(folders)} skills validated — {errors} error, {warnings} warn.", file=sys.stderr)
+    return 1 if errors else 2
 
 
 if __name__ == "__main__":

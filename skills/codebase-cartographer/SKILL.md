@@ -1,248 +1,248 @@
 ---
 name: codebase-cartographer
-description: Cartographie un projet de code existant ou nouveau pour produire une documentation structurée métier + technique. Crée un dossier `docs/` organisé en `docs/business/` (glossaire, features core, test cases — un .md par cas, groupés par feature) et `docs/technical/` (architecture, stack, stratégie de test, ADR avec analyse de l'historique git), valide chaque section avec l'utilisateur via QCM, refactorise pour éliminer les redondances, et référence le tout dans `AGENTS.md`. À utiliser DÈS QUE l'utilisateur demande de "documenter le projet", "cartographier le code", "générer la doc", "créer un glossaire métier", "documenter l'architecture", "écrire des ADR", "produire une stratégie de test", ou mentionne vouloir structurer la connaissance d'un projet — même si le mot "skill" n'est pas employé. À utiliser aussi quand l'utilisateur invoque explicitement ce skill par son nom.
+description: Maps an existing or brand-new codebase to produce structured business + technical documentation. Creates a `docs/` folder split into `docs/business/` (glossary, core features, test cases — one .md per case, grouped by feature) and `docs/technical/` (architecture, stack, test strategy, ADRs backed by git history analysis), validates every section with the user through multiple-choice questions, refactors to remove redundancy, and links it all from `AGENTS.md`. Use AS SOON AS the user asks to "document the project", "map the codebase", "generate the docs", "write a business glossary", "document the architecture", "write ADRs", "produce a test strategy", or mentions wanting to capture a project's knowledge in a structured way — even when the word "skill" never comes up. Use it as well when the user calls this skill by name.
 ---
 
 # Codebase Cartographer
 
-Génère une documentation projet complète et structurée, validée pas à pas avec l'utilisateur.
+Generates complete, structured project documentation, validated step by step with the user.
 
-## Vue d'ensemble du workflow
+## Workflow at a glance
 
 ```
-[Première exécution]
-1. Analyse initiale du projet
-2. Pour chaque doc à générer (7 fichiers) :
-   a. QCM de validation (ce que l'agent a compris + ses incertitudes)
-   b. Écriture du fichier .md
-3. Refactor global anti-redondance
-4. Demande de validation avant de modifier AGENTS.md
-5. Mise à jour d'AGENTS.md (création ou patch)
+[First run]
+1. Initial project analysis
+2. For each doc to generate (7 files):
+   a. Validation round of multiple-choice questions (what the agent understood + what it is unsure about)
+   b. Writing the .md file
+3. Global anti-redundancy refactor
+4. Approval request before touching AGENTS.md
+5. AGENTS.md update (creation or patch)
 
-[Ré-exécution : bascule automatique en mode mise à jour]
-1. Inventaire des docs existantes
-2. Analyse du delta entre code et docs (nouveau/obsolète/modifié/inchangé)
-3. QCM consolidé par type de doc pour valider les changements
-4. Application des changements (archivage des suppressions, préservation des éditions manuelles)
-5. Refactor global sur l'ensemble
-6. Mise à jour d'AGENTS.md si nécessaire
+[Re-run: switches to update mode automatically]
+1. Inventory of the existing docs
+2. Delta analysis between code and docs (new/obsolete/changed/unchanged)
+3. Consolidated multiple-choice round per doc type to validate the changes
+4. Applying the changes (archiving deletions, preserving manual edits)
+5. Global refactor across the whole set
+6. AGENTS.md update if needed
 ```
 
-**Principe central** : l'agent n'écrit JAMAIS un fichier de doc sans avoir d'abord présenté à l'utilisateur ce qu'il a compris et fait valider les points incertains. Le QCM est obligatoire avant chaque écriture.
+**Core principle**: the agent NEVER writes a doc file without first showing the user what it understood and getting the uncertain points settled. The multiple-choice round is mandatory before every write.
 
-**Idempotence** : ré-exécuter le skill ne dégrade pas la doc. Le mode mise à jour est conçu pour être lancé régulièrement à mesure que le code évolue.
+**Idempotence**: re-running the skill does not damage the docs. Update mode is designed to be triggered regularly as the code evolves.
 
 ---
 
-## Étape 1 — Analyse initiale
+## Step 1 — Initial analysis
 
-Avant toute question à l'utilisateur, l'agent inspecte le projet pour se faire une idée. Tâches à faire en parallèle quand c'est possible :
+Before asking the user anything, the agent inspects the project to form a picture. Tasks to run in parallel whenever possible:
 
-- Lister la racine et les dossiers de premier niveau
-- Lire le `README.md` s'il existe
-- Repérer les fichiers de manifeste (`package.json`, `pyproject.toml`, `pom.xml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc.) pour déduire la stack
-- Repérer les fichiers de config CI/CD, Docker, infra (`docker-compose.yml`, `Dockerfile`, `.github/workflows/`, `terraform/`, etc.)
-- Repérer le dossier de tests et identifier le framework de test
-- Repérer les dossiers source principaux et leur organisation
-- Vérifier si `docs/` ou `AGENTS.md` existe déjà (pour éviter d'écraser bêtement)
-- Si le projet est sous git, inspecter `git log --oneline -200` et les tags pour repérer les décisions structurantes passées (utile pour la phase ADR)
+- List the root and the first-level folders
+- Read `README.md` if it exists
+- Spot the manifest files (`package.json`, `pyproject.toml`, `pom.xml`, `Cargo.toml`, `go.mod`, `Gemfile`, etc.) to infer the stack
+- Spot the CI/CD, Docker and infra config files (`docker-compose.yml`, `Dockerfile`, `.github/workflows/`, `terraform/`, etc.)
+- Spot the test folder and identify the test framework
+- Spot the main source folders and how they are organized
+- Check whether `docs/` or `AGENTS.md` already exists (so nothing gets blindly overwritten)
+- If the project is under git, inspect `git log --oneline -200` and the tags to spot past structural decisions (useful for the ADR phase)
 
-Si un `docs/` généré par ce skill existe déjà (présence des fichiers attendus : `docs/business/glossary.md`, `docs/technical/architecture.md`, etc.), l'agent bascule en **mode mise à jour** — voir section dédiée plus bas. Le skill est idempotent : ré-exécuté, il met à jour intelligemment au lieu de tout regénérer.
+If a `docs/` produced by this skill already exists (the expected files are there: `docs/business/glossary.md`, `docs/technical/architecture.md`, etc.), the agent switches to **update mode** — see the dedicated section below. The skill is idempotent: re-run, it updates intelligently instead of regenerating everything.
 
-Si un `docs/` existe mais ne ressemble pas à une sortie de ce skill (structure différente, fichiers inconnus), l'agent signale l'ambiguïté et demande à l'utilisateur : compléter / repartir de zéro avec backup / annuler.
+If a `docs/` exists but does not look like output from this skill (different structure, unknown files), the agent flags the ambiguity and asks the user: complete it / start over with a backup / cancel.
 
-Si un `AGENTS.md` existe déjà, on le note pour l'étape finale — surtout pas le toucher tout de suite.
+If an `AGENTS.md` already exists, note it for the final step — and above all, do not touch it yet.
 
-**Stocker mentalement** (ou dans un fichier scratch si la session est longue) : ce qui est clair, ce qui est ambigu, ce qui est manquant. Cette cartographie alimente les QCM.
+**Keep in mind** (or in a scratch file if the session runs long): what is clear, what is ambiguous, what is missing. This map feeds the multiple-choice questions.
 
 ---
 
-## Étape 2 — Génération doc par doc avec validation QCM
+## Step 2 — Doc-by-doc generation with multiple-choice validation
 
-Pour chacun des 7 fichiers, l'agent suit le même cycle : **analyser → QCM → écrire**.
+For each of the 7 files, the agent follows the same cycle: **analyze → ask → write**.
 
-L'ordre recommandé est métier d'abord (donne le vocabulaire) puis technique :
+The recommended order is business first (it sets the vocabulary), then technical:
 
-| # | Fichier(s) | Emplacement |
-|---|------------|-------------|
+| # | File(s) | Location |
+|---|---------|----------|
 | 1 | `glossary.md` | `docs/business/` |
 | 2 | `core-features.md` | `docs/business/` |
-| 3 | un `.md` par test case, groupé par feature | `docs/business/test-cases/[feature]/` |
+| 3 | one `.md` per test case, grouped by feature | `docs/business/test-cases/[feature]/` |
 | 4 | `architecture.md` | `docs/technical/` |
 | 5 | `tech-stack.md` | `docs/technical/` |
 | 6 | `test-strategy.md` | `docs/technical/` |
-| 7 | `adr.md` (index) + un `.md` par ADR | `docs/technical/` + `docs/technical/adr/` |
+| 7 | `adr.md` (index) + one `.md` per ADR | `docs/technical/` + `docs/technical/adr/` |
 
-### Format du QCM
+### Shape of the multiple-choice round
 
-Pour chaque section, présenter à l'utilisateur, dans cet ordre :
+For each section, present to the user, in this order:
 
-1. **Ce que j'ai compris** : un résumé bref en bullet points de ce que l'agent a inféré
-2. **Ce dont je ne suis pas sûr** : 1 à 3 questions sous forme de QCM
+1. **What I understood**: a short bullet-point summary of what the agent inferred
+2. **What I am unsure about**: 1 to 3 multiple-choice questions
 
-La doctrine complète — rédaction des questions, nombre d'options, mode dégradé quand l'agent hôte n'expose pas d'outil de question à choix multiples — est dans le skill `clarify-with-choices`. Le charger avant le premier QCM.
+The full doctrine — how to word the questions, how many options, degraded mode when the host agent exposes no multiple-choice question tool — lives in the `clarify-with-choices` skill. Load it before the first round.
 
-Si l'agent n'a aucune incertitude sur une section (rare), il propose quand même une validation simple : "Voici ce que je vais écrire dans X — je procède ?"
+If the agent has no uncertainty at all about a section (rare), it still asks for a simple confirmation: "Here is what I am about to write in X — shall I go ahead?"
 
-### Détail par fichier
+### Per-file detail
 
-Chaque fichier suit un template spécifique. Voir `references/templates.md` pour les structures détaillées et les questions QCM types par section.
+Each file follows a specific template. See `references/templates.md` for the detailed structures and the typical questions per section.
 
-### Écriture du fichier
+### Writing the file
 
-Une fois le QCM répondu, l'agent écrit le fichier `.md` directement dans `docs/business/` ou `docs/technical/`. Le contenu doit :
-- Suivre le template adapté (voir `references/templates.md`)
-- Rester factuel et concis (pas de remplissage)
-- Utiliser le vocabulaire du glossaire (cohérence)
-- Inclure des liens relatifs vers les autres docs quand pertinent
+Once the questions are answered, the agent writes the `.md` file straight into `docs/business/` or `docs/technical/`. The content must:
+- Follow the matching template (see `references/templates.md`)
+- Stay factual and concise (no filler)
+- Use the glossary vocabulary (consistency)
+- Include relative links to the other docs where relevant
 
-Après écriture, l'agent **annonce brièvement** ce qu'il vient de produire et passe au fichier suivant, sans attendre confirmation (l'utilisateur a déjà validé via le QCM).
-
----
-
-## Étape 3 — Refactor anti-redondance
-
-Une fois les 7 fichiers générés, l'agent relit l'ensemble en une passe et cherche :
-
-1. **Définitions dupliquées** : un terme défini dans le glossaire ET ré-expliqué dans une autre doc → garder dans le glossaire, remplacer par un lien dans l'autre doc
-2. **Listes de features redondantes** : `core-features.md` et `architecture.md` qui décrivent les mêmes flows → la feature reste métier, l'architecture renvoie au feature avec un lien
-3. **Stack répétée** : `tech-stack.md` et `architecture.md` qui listent les mêmes outils → la liste exhaustive reste dans `tech-stack.md`, l'architecture ne mentionne que ce qui est structurant
-4. **Stratégie de test vs test cases** : `test-strategy.md` décrit le COMMENT (pyramide, outils, couverture cible), `test-cases.md` décrit le QUOI (scénarios métier) — pas de mélange
-5. **Décisions techniques** : si une décision est dans `architecture.md` ET mériterait un ADR, créer/déplacer vers l'ADR et linker
-
-Pour chaque redondance détectée, l'agent présente brièvement le diff proposé à l'utilisateur en une seule passe (liste à puces), puis applique les corrections après validation globale.
-
-Si rien à refactorer (cas idéal), l'agent le mentionne et passe à l'étape suivante.
+After writing, the agent **briefly announces** what it just produced and moves on to the next file, without waiting for confirmation (the user already validated through the questions).
 
 ---
 
-## Étape 4 — Mise à jour d'AGENTS.md (avec validation)
+## Step 3 — Anti-redundancy refactor
 
-**Règle stricte** : avant toute modification d'`AGENTS.md`, l'agent demande explicitement la permission à l'utilisateur, en montrant :
-- Si `AGENTS.md` n'existe pas : le contenu complet qu'il propose de créer
-- Si `AGENTS.md` existe : le diff exact qu'il propose d'appliquer (section ajoutée à la fin par défaut)
+Once the 7 files are generated, the agent rereads the whole set in one pass and looks for:
 
-### Contenu de la section à ajouter / créer
+1. **Duplicated definitions**: a term defined in the glossary AND re-explained in another doc → keep it in the glossary, replace it with a link in the other doc
+2. **Redundant feature lists**: `core-features.md` and `architecture.md` describing the same flows → the feature stays on the business side, the architecture links back to it
+3. **Repeated stack**: `tech-stack.md` and `architecture.md` listing the same tools → the exhaustive list stays in `tech-stack.md`, the architecture mentions only what is structural
+4. **Test strategy vs test cases**: `test-strategy.md` describes the HOW (pyramid, tools, coverage target), `test-cases.md` describes the WHAT (business scenarios) — no mixing
+5. **Technical decisions**: if a decision sits in `architecture.md` AND deserves an ADR, create/move it into the ADR and link
+
+For each redundancy found, the agent briefly shows the user the proposed diff in a single pass (bullet list), then applies the fixes once approved as a whole.
+
+If there is nothing to refactor (the ideal case), the agent says so and moves to the next step.
+
+---
+
+## Step 4 — AGENTS.md update (with validation)
+
+**Strict rule**: before any change to `AGENTS.md`, the agent explicitly asks the user for permission, showing:
+- If `AGENTS.md` does not exist: the full content it proposes to create
+- If `AGENTS.md` exists: the exact diff it proposes to apply (section appended at the end by default)
+
+### Content of the section to add / create
 
 ```markdown
-## Documentation du projet
+## Project documentation
 
-Ce projet dispose d'une documentation structurée dans `docs/`. Consulter ces fichiers avant toute modification importante.
+This project has structured documentation under `docs/`. Read these files before any significant change.
 
-### Métier
-- [Glossaire](docs/business/glossary.md) — vocabulaire du domaine
-- [Features core](docs/business/core-features.md) — fonctionnalités principales
-- [Test cases](docs/business/test-cases/) — scénarios de test métier (un fichier par cas, groupés par feature)
+### Business
+- [Glossary](docs/business/glossary.md) — domain vocabulary
+- [Core features](docs/business/core-features.md) — main capabilities
+- [Test cases](docs/business/test-cases/) — business test scenarios (one file per case, grouped by feature)
 
-### Technique
-- [Architecture](docs/technical/architecture.md) — vue d'ensemble et composants
-- [Stack technique](docs/technical/tech-stack.md) — technologies et outils
-- [Stratégie de test](docs/technical/test-strategy.md) — approche de testing
-- [ADR](docs/technical/adr.md) — décisions d'architecture
+### Technical
+- [Architecture](docs/technical/architecture.md) — overview and components
+- [Tech stack](docs/technical/tech-stack.md) — technologies and tools
+- [Test strategy](docs/technical/test-strategy.md) — testing approach
+- [ADR](docs/technical/adr.md) — architecture decisions
 ```
 
-Si `AGENTS.md` existait déjà avec d'autres sections, ajouter cette section sans toucher au reste. Si une section "Documentation" existait déjà, proposer un merge plutôt qu'un écrasement.
+If `AGENTS.md` already existed with other sections, add this one without touching the rest. If a "Documentation" section already existed, propose a merge rather than an overwrite.
 
-**Compatibilité Claude Code.** `AGENTS.md` est lu nativement par la plupart des agents, mais pas par Claude Code, qui cherche `CLAUDE.md`. Si le projet n'a pas de `CLAUDE.md`, ou en a un qui n'importe pas `AGENTS.md`, proposer par QCM d'y ajouter la ligne d'import :
+**Claude Code compatibility.** `AGENTS.md` is read natively by most agents, but not by Claude Code, which looks for `CLAUDE.md`. If the project has no `CLAUDE.md`, or has one that does not import `AGENTS.md`, offer through a multiple-choice question to add the import line:
 
 ```markdown
 @AGENTS.md
 ```
 
-Une seule source de vérité, lisible par tous. Ne jamais dupliquer le contenu dans les deux fichiers : deux copies divergent.
+One single source of truth, readable by everyone. Never duplicate the content across both files: two copies drift apart.
 
 
 ---
 
-## Mode mise à jour (ré-exécution du skill)
+## Update mode (re-running the skill)
 
-Quand le skill détecte un `docs/` déjà généré par lui (signature : présence de `docs/business/glossary.md`, `docs/business/core-features.md`, `docs/technical/architecture.md` au minimum), il bascule automatiquement en mode mise à jour. **C'est le comportement par défaut, pas une option** — le skill est conçu pour être ré-exécuté à chaque évolution significative du projet.
+When the skill detects a `docs/` it generated itself (signature: `docs/business/glossary.md`, `docs/business/core-features.md` and `docs/technical/architecture.md` present at minimum), it switches to update mode automatically. **This is the default behavior, not an option** — the skill is built to be re-run at every significant evolution of the project.
 
-### Principe
+### Principle
 
-Le skill produit un **diff de doc**, pas une nouvelle doc. Il compare l'état actuel du code à ce qui est consigné dans `docs/`, et propose à l'utilisateur les ajustements pertinents — sans jamais perdre du contenu humain ajouté à la main.
+The skill produces a **doc diff**, not a new set of docs. It compares the current state of the code against what is recorded in `docs/`, and offers the user the relevant adjustments — never losing human content added by hand.
 
-### Procédure détaillée
+### Detailed procedure
 
-**1. Inventaire de l'existant**
+**1. Inventory of what exists**
 
-Avant tout, l'agent lit la totalité des fichiers de `docs/` et en construit une représentation interne. Il note en particulier :
-- Liste des termes du glossaire
-- Liste des features
-- Liste des test cases existants (par feature) avec leur titre et identifiant de fichier
-- Liste des ADR existants avec leur numéro et statut
-- Tout commentaire ou section qui semble avoir été édité manuellement (présence de `> TODO`, formulations très spécifiques, contenu absent du code)
+First, the agent reads every file under `docs/` and builds an internal representation of them. It notes in particular:
+- The list of glossary terms
+- The list of features
+- The list of existing test cases (per feature) with their title and file identifier
+- The list of existing ADRs with their number and status
+- Any comment or section that looks hand-edited (presence of `> TODO`, very specific wording, content absent from the code)
 
-**2. Analyse du delta**
+**2. Delta analysis**
 
-L'agent refait l'analyse complète du projet (étape 1 du workflow normal) et compare au snapshot de l'étape précédente. Pour chaque type de doc, il classe les éléments en 4 catégories :
+The agent redoes the full project analysis (step 1 of the normal workflow) and compares it to the snapshot from the previous step. For each doc type, it sorts the items into 4 categories:
 
-| Catégorie | Action par défaut |
-|-----------|-------------------|
-| **Inchangé** (présent ici et là, contenu cohérent) | Ne rien faire |
-| **Nouveau** (présent dans le code, absent de la doc) | Proposer ajout via QCM |
-| **Obsolète** (présent dans la doc, plus dans le code) | Proposer suppression via QCM, avec contexte |
-| **Modifié** (présent des deux côtés mais divergent) | Proposer mise à jour via QCM, en montrant le diff |
+| Category | Default action |
+|----------|----------------|
+| **Unchanged** (present on both sides, consistent content) | Do nothing |
+| **New** (present in the code, missing from the docs) | Propose an addition through a multiple-choice question |
+| **Obsolete** (present in the docs, gone from the code) | Propose a deletion through a multiple-choice question, with context |
+| **Changed** (present on both sides but diverging) | Propose an update through a multiple-choice question, showing the diff |
 
-**3. QCM consolidé**
+**3. Consolidated question round**
 
-Au lieu d'un QCM par fichier comme en première exécution, l'agent présente en une seule passe (par type de doc) un récapitulatif structuré :
+Instead of one round per file as on the first run, the agent presents a structured recap in a single pass (per doc type):
 
 ```
-## Glossaire — 3 changements proposés
+## Glossary — 3 proposed changes
 
-NOUVEAU (1) :
-- "Idempotence" — détecté dans src/api/handlers.py (nouveau concept central)
+NEW (1):
+- "Idempotence" — spotted in src/api/handlers.py (new central concept)
 
-OBSOLÈTE (1) :
-- "LegacyAuth" — plus aucune référence dans le code (supprimé au commit abc1234)
+OBSOLETE (1):
+- "LegacyAuth" — no reference left in the code (removed in commit abc1234)
 
-MODIFIÉ (1) :
-- "Panier" — définition actuelle parle de "session", mais le code utilise maintenant
-  une persistance DB. Mettre à jour ?
+CHANGED (1):
+- "Cart" — the current definition talks about "session", but the code now uses
+  DB persistence. Update it?
 ```
 
-Puis un QCM pour valider l'ensemble : accepter tout / refuser tout / sélection fine (voir `clarify-with-choices`).
+Then a multiple-choice question to validate the whole thing: accept all / reject all / pick individually (see `clarify-with-choices`).
 
-**4. Application des changements**
+**4. Applying the changes**
 
-Une fois validés :
-- Les **ajouts** sont insérés en respectant l'ordre existant (alphabétique pour le glossaire, par feature pour les test cases, numérotation continue pour les ADR)
-- Les **suppressions** déplacent le fichier vers `docs/.archive/[date]/` plutôt que de le supprimer définitivement (récupération possible)
-- Les **modifications** préservent les éventuelles sections marquées manuellement (commentaires, notes à la main) — l'agent met à jour uniquement la partie auto-générée et signale ce qu'il a préservé
+Once validated:
+- **Additions** are inserted following the existing order (alphabetical for the glossary, by feature for the test cases, continuous numbering for the ADRs)
+- **Deletions** move the file to `docs/.archive/[date]/` rather than deleting it for good (recovery stays possible)
+- **Changes** preserve any hand-marked sections (comments, handwritten notes) — the agent updates only the auto-generated part and reports what it preserved
 
-### Règles spécifiques par doc
+### Per-doc specifics
 
-**Test cases** : la numérotation séquentielle est évitée justement pour éviter les conflits en ré-exécution (noms en kebab-case descriptifs). Si un test case existant a été renommé manuellement, ne pas le recréer sous l'ancien nom — utiliser le nom actuel comme référence.
+**Test cases**: sequential numbering is avoided precisely to prevent conflicts on re-runs (descriptive kebab-case names). If an existing test case was renamed by hand, do not recreate it under the old name — use the current name as the reference.
 
-**ADR** : la numérotation est continue et **immuable**. Un ADR existant n'est jamais renuméroté. Les nouveaux ADR prennent le prochain numéro libre. Un ADR obsolète n'est pas supprimé — son statut passe à `déprécié` ou `remplacé par ADR-XXXX` (à valider via QCM).
+**ADRs**: numbering is continuous and **immutable**. An existing ADR is never renumbered. New ADRs take the next free number. An obsolete ADR is not deleted — its status becomes `deprecated` or `superseded by ADR-XXXX` (to be validated through a multiple-choice question).
 
-**AGENTS.md** : si la section "Documentation du projet" existe déjà et pointe vers la bonne structure, ne pas la toucher. Sinon proposer un patch ciblé.
+**AGENTS.md**: if the "Project documentation" section already exists and points at the right structure, leave it alone. Otherwise propose a targeted patch.
 
-### Refactor en mode mise à jour
+### Refactor in update mode
 
-Le refactor anti-redondance (étape 3 du workflow normal) tourne aussi en mode mise à jour, mais sur l'**ensemble** des fichiers (existants + modifiés + ajoutés), pas seulement sur les changements. Cela permet d'attraper des redondances qui auraient survécu à l'exécution précédente.
+The anti-redundancy refactor (step 3 of the normal workflow) runs in update mode too, but over the **whole** set of files (existing + changed + added), not just the changes. That catches redundancies that survived the previous run.
 
-### Si rien n'a changé
+### If nothing changed
 
-Si l'analyse révèle aucun delta significatif, l'agent le dit clairement à l'utilisateur (« La doc est à jour, rien à modifier ») et termine sans tool call superflu. C'est un cas heureux, pas une erreur.
-
----
-
-## Conseils transverses
-
-**Langue** : suivre la langue du projet existant. Si le projet est en français (README, commentaires, noms de variables métier), générer la doc en français. Sinon en anglais. En cas de mix, demander à l'utilisateur.
-
-**Niveau de détail** : viser des fichiers utilisables, pas exhaustifs. Un glossaire de 200 lignes ne sera pas lu. Mieux vaut 30 entrées précises que 100 vagues.
-
-**Honnêteté sur les incertitudes** : si l'agent ne trouve pas l'info dans le code et que l'utilisateur ne sait pas répondre, marquer la section avec un `> TODO: à compléter — [question précise]` plutôt que d'inventer.
-
-**ADR** : ne pas en inventer rétroactivement à partir du code. Demander à l'utilisateur quelles décisions structurantes mériteraient un ADR. Si aucune, créer un `adr.md` minimal qui explique le format à utiliser pour les futurs ADR (template inclus).
-
-**Pas d'over-engineering** : si le projet est petit (script unique, ~500 lignes), proposer une version condensée (un seul `docs/README.md` plutôt que 7 fichiers). Demander à l'utilisateur s'il préfère la version complète ou condensée.
+If the analysis reveals no significant delta, the agent says so plainly ("The docs are up to date, nothing to change") and stops without a single superfluous tool call. That is a happy case, not an error.
 
 ---
 
-## Référence
+## Cross-cutting advice
 
-- `references/templates.md` — templates détaillés des 7 fichiers + questions QCM types par section
+**Language**: follow the language of the existing project. If the project is in French (README, comments, business variable names), generate the docs in French. Otherwise in English. If it is a mix, ask the user.
+
+**Level of detail**: aim for files people can use, not exhaustive ones. A 200-line glossary will not be read. 30 precise entries beat 100 vague ones.
+
+**Honesty about uncertainty**: if the agent cannot find the information in the code and the user has no answer, mark the section with a `> TODO: to be completed — [precise question]` rather than making something up.
+
+**ADRs**: do not invent them retroactively from the code. Ask the user which structural decisions deserve an ADR. If there are none, create a minimal `adr.md` explaining the format to use for future ADRs (template included).
+
+**No over-engineering**: if the project is small (a single script, ~500 lines), offer a condensed version (one single `docs/README.md` rather than 7 files). Ask the user whether they prefer the full or the condensed version.
+
+---
+
+## Reference
+
+- `references/templates.md` — detailed templates for the 7 files + typical multiple-choice questions per section

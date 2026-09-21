@@ -1,74 +1,84 @@
 ---
 name: clarify-with-choices
-description: Doctrine de validation par QCM — comment un skill interroge l'utilisateur avant d'écrire quoi que ce soit, et comment il dégrade quand l'agent hôte n'a pas de mécanisme de question à choix multiples. Chargé par les skills qui valident des décisions structurantes (codebase-cartographer, codebase-harness, ddd-advisor), rarement invoqué directement. À utiliser aussi quand on écrit ou révise un skill qui doit demander l'avis de l'utilisateur, ou quand on se demande combien de questions poser, sous quelle forme, ou que faire si l'utilisateur répond « à toi de voir ». Ne pas confondre avec code-assimilation-quiz, dont le QCM interroge le développeur pour qu'il apprenne, et non pour trancher une décision.
+description: >
+  Doctrine for validating with multiple-choice questions — how a skill questions the user
+  before writing anything, and how it degrades when the host agent offers no multiple-choice
+  mechanism. Loaded by the skills that validate structuring decisions (codebase-cartographer,
+  codebase-harness, ddd-advisor), rarely invoked directly. Use it too when writing or revising
+  a skill that has to ask the user for a decision, or when wondering how many questions to ask,
+  in what shape, or what to do when the user answers "your call". Not to be confused with
+  code-assimilation-quiz, whose multiple-choice questions quiz the developer so that they
+  learn, not to settle a decision.
 ---
 
-# Valider par QCM
+# Validating with multiple-choice questions
 
-Le QCM est le point de contact entre un skill et la personne qui l'utilise. C'est là que se joue la règle commune à tous les skills de ce dépôt : **rien de structurant ne s'écrit sans validation explicite**.
+The multiple-choice question is the point of contact between a skill and the person using it. It is where the rule shared by every skill in this repository plays out: **nothing structuring gets written without explicit validation**.
 
-C'est aussi le seul endroit où les agents diffèrent vraiment. Le reste — lire des fichiers, exécuter des scripts, écrire du markdown — se comporte partout pareil. Poser une question à choix multiples, non.
+It is also the only place where agents genuinely differ. The rest — reading files, running scripts, writing markdown — behaves the same everywhere. Asking a multiple-choice question does not.
 
-## Le mécanisme, selon l'hôte
+## The mechanism, depending on the host
 
-Avant le premier QCM, déterminer ce dont l'agent dispose :
+Before the first question, work out what the agent has to work with:
 
-| Situation | Conduite |
+| Situation | What to do |
 |---|---|
-| L'hôte expose un outil de question à choix multiples | L'utiliser. Interface cliquable, pas de saisie à l'aveugle, réponses non ambiguës. |
-| L'hôte n'en expose aucun | **Mode dégradé** : présenter la question en texte, options numérotées, puis s'arrêter et attendre la réponse. |
+| The host exposes a multiple-choice question tool | Use it. Clickable interface, no blind typing, unambiguous answers. |
+| The host exposes none | **Degraded mode**: present the question as text, numbered options, then stop and wait for the answer. |
 
-Ne jamais coder un nom d'outil en dur dans un skill. Les noms varient d'un agent à l'autre et changent de version en version ; un skill qui nomme son outil est un skill qui casse ailleurs.
+Never hardcode a tool name in a skill. Names vary from one agent to the next and change from version to version; a skill that names its tool is a skill that breaks elsewhere.
 
-**Le mode dégradé n'est pas une excuse pour sauter le QCM.** Une liste numérotée dans un message vaut validation. Ce qui est interdit, c'est d'écrire sans avoir demandé — pas de demander en texte brut.
+**Degraded mode is no excuse for skipping the question.** A numbered list in a message counts as validation. What is forbidden is writing without having asked — not asking in plain text.
+
+**Ask in the user's own language.** The questions are addressed to a person: write them in the language that person works in — the language of the project being worked on — never in English by default. This repository is in English; what a skill says out loud is not.
 
 ```
-Trois points à trancher avant que j'écrive le glossaire :
+Three things to settle before I write the glossary:
 
-1. « Commande » et « Order » désignent-ils la même chose ?
-   a) Oui, un seul terme à retenir — je garde « Commande »
-   b) Non, ce sont deux concepts distincts
-   c) Autre / je précise
+1. Do "Order" and "Purchase" mean the same thing here?
+   a) Yes, one term to keep — I go with "Order"
+   b) No, they are two distinct concepts
+   c) Other / let me explain
 
 2. …
 
-Réponds par exemple « 1a 2c » et je continue.
+Answer with something like "1a 2c" and I will carry on.
 ```
 
-## La structure d'un round
+## The shape of a round
 
-Dans cet ordre, toujours :
+In this order, always:
 
-1. **Ce que j'ai compris** — un résumé bref en puces de ce que l'agent a inféré du code. C'est ce qui rend la question répondable : sans ça, l'utilisateur arbitre à l'aveugle.
-2. **Ce dont je ne suis pas sûr** — 1 à 3 questions.
+1. **What I understood** — a short bulleted summary of what the agent inferred from the code. That is what makes the question answerable: without it, the user arbitrates blind.
+2. **What I am unsure about** — 1 to 3 questions.
 
-Puis on écrit. Après écriture, annoncer brièvement ce qui a été produit et enchaîner, **sans redemander confirmation** : l'utilisateur a déjà validé via le QCM.
+Then we write. Once written, briefly announce what was produced and move on, **without asking for confirmation again**: the user already validated through the multiple-choice question.
 
-## Rédiger les questions
+## Writing the questions
 
-| Règle | Raison |
+| Rule | Reason |
 |---|---|
-| 3 questions maximum par round | Au-delà, l'utilisateur survole et valide sans lire. |
-| 2 à 4 options, mutuellement exclusives | Des options qui se recouvrent produisent une réponse qu'on ne sait pas interpréter. |
-| Options courtes — 2 à 6 mots | Elles sont lues sur un écran étroit, parfois sur mobile. |
-| Une option « autre / je précise » quand c'est utile | Une porte de sortie évite de forcer un choix faux. |
-| Formulation courte et directe | La question porte sur le projet, pas sur la méthode. |
+| 3 questions maximum per round | Beyond that, the user skims and validates without reading. |
+| 2 to 4 options, mutually exclusive | Overlapping options produce an answer nobody knows how to read. |
+| Short options — 2 to 6 words | They are read on a narrow screen, sometimes on a phone. |
+| An "other / let me explain" option where it helps | An escape hatch avoids forcing a wrong choice. |
+| Short, direct wording | The question is about the project, not about the method. |
 
-Poser la question à laquelle **seul l'utilisateur** peut répondre. Ce qui se lit dans le code se lit dans le code : demander ce qui est déjà visible use le crédit d'attention sur les vraies incertitudes.
+Ask the question **only the user** can answer. What can be read in the code is read in the code: asking about what is already visible spends attention that belongs to the real uncertainties.
 
-## Cas particuliers
+## Special cases
 
-**Aucune incertitude** (rare). Proposer quand même une validation simple : « Voici ce que je vais écrire dans X — je procède ? »
+**No uncertainty at all** (rare). Offer a simple validation anyway: "Here is what I am about to write in X — shall I go ahead?"
 
-**« À toi de voir » / « conseille-moi ».** Faire un choix par défaut raisonnable, **l'annoncer explicitement**, et passer à la suite. Ne pas re-questionner : l'utilisateur vient de déléguer, lui renvoyer la décision est une réponse à côté.
+**"Your call" / "you decide".** Make a reasonable default choice, **state it explicitly**, and move on. Do not ask again: the user has just delegated, handing the decision back is an answer beside the point.
 
-**Multi-sélection.** Quand les options ne s'excluent pas (activer plusieurs briques, retenir plusieurs invariants), le dire dans l'énoncé et prévoir « toutes » et « aucune ». « Aucune » est une réponse légitime : elle termine le skill proprement, sans négociation.
+**Multi-select.** When the options are not exclusive (enabling several blocks, keeping several invariants), say so in the prompt and provide "all" and "none". "None" is a legitimate answer: it ends the skill cleanly, with no negotiation.
 
-**Réponse hors options.** L'utilisateur qui répond à côté du QCM répond quand même : prendre sa réponse littérale, pas l'option la plus proche.
+**An answer outside the options.** A user who answers beside the question is still answering: take their answer literally, not the closest option.
 
-## Interdits
+## Forbidden
 
-- **Écrire un fichier structurant sans QCM préalable.** Même quand la réponse paraît évidente.
-- **Coder un nom d'outil en dur.** Voir plus haut.
-- **Enchaîner les rounds sans rien produire.** Un QCM sert à débloquer une écriture ; trois rounds d'affilée sans écrire signalent que le skill questionne au lieu d'avancer.
-- **Reformuler une question déjà tranchée.** Une décision validée est acquise pour la durée du skill.
+- **Writing a structuring file without asking first.** Even when the answer looks obvious.
+- **Hardcoding a tool name.** See above.
+- **Chaining rounds without producing anything.** A question exists to unblock a piece of writing; three rounds in a row with nothing written mean the skill is questioning instead of moving forward.
+- **Rephrasing a question already settled.** A validated decision holds for the lifetime of the skill.

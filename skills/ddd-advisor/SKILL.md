@@ -1,125 +1,129 @@
 ---
 name: ddd-advisor
 description: >
-  Audit DDD d'un codebase existant ET guide de conception Domain-Driven Design en cours de
-  développement. À utiliser dès que l'utilisateur mentionne DDD, un "modèle anémique", des
-  "agrégats", "entités vs objets-valeurs", "bounded context" / "contexte borné", "langage
-  omniprésent" / "ubiquitous language", "carte de contexte", "couche anticorruption", ou pose
-  une question de modélisation du domaine ("où mettre cette logique métier ?", "est-ce une
-  entité ?", "comment découper ce monolithe en contextes ?"). À utiliser AUSSI quand un audit
-  ou une remédiation révèle de la logique métier éparpillée, des couches qui fuient, ou un
-  couplage fort entre sous-systèmes — même si le mot "DDD" n'est pas prononcé. Les skills
-  ai-code-remediation, codebase-cartographer et codebase-harness peuvent invoquer ce skill
-  pour qualifier des symptômes de conception ou produire des invariants d'architecture.
+  DDD audit of an existing codebase AND Domain-Driven Design guidance while development is
+  under way. Use as soon as the user mentions DDD, an "anemic domain model", "aggregates",
+  "entities vs value objects", "bounded context", "ubiquitous language", "context map",
+  "anti-corruption layer", or asks a domain modeling question ("where does this domain logic
+  belong?", "is this an entity?", "how do I split this monolith into contexts?"). Use it ALSO
+  when an audit or a remediation surfaces scattered domain logic, leaking layers, or tight
+  coupling between subsystems — even when the word "DDD" is never said. The
+  ai-code-remediation, codebase-cartographer and codebase-harness skills may invoke this skill
+  to qualify design symptoms or to produce architecture invariants.
 ---
 
 # DDD Advisor
 
-Audit et accompagnement Domain-Driven Design, basé sur les patterns d'Eric Evans
-(tactiques **et** stratégiques). Deux modes, sélectionnés selon le contexte de la demande.
+Domain-Driven Design audit and guidance, built on Eric Evans's patterns (tactical **and**
+strategic). Two modes, picked from the context of the request.
 
-## Signalement initial
+## Initial announcement
 
-Comme `plan-driven-dev`, ce skill **se signale avant de s'appliquer** : annoncer brièvement
-le mode pressenti (audit ou guide) et demander validation à l'utilisateur. Ne jamais dérouler
-un audit complet sans accord explicite.
+Like `plan-driven-dev`, this skill **announces itself before applying**: state the mode it
+expects to use (audit or guidance) in a line or two and ask the user to confirm. Never run a
+full audit without explicit agreement.
 
-## Choix du mode
+## Picking the mode
 
-| Indice dans la demande | Mode |
+| Signal in the request | Mode |
 |---|---|
-| "audite", "analyse ce code", "pourquoi ce code est dur à maintenir", codebase fourni | **Audit** |
-| Question de conception ponctuelle, feature en cours, choix de modélisation | **Guide** |
-| Ambigu | Demander via QCM (2 options) |
+| "audit this", "analyze this code", "why is this code hard to maintain", a codebase handed over | **Audit** |
+| A one-off design question, a feature under way, a modeling choice | **Guidance** |
+| Ambiguous | Ask with a multiple-choice question (2 options) |
 
 ---
 
-## Mode Audit
+## Audit mode
 
-Analyse à froid d'un codebase pour évaluer son alignement DDD. Toujours dans cet ordre :
+Cold analysis of a codebase to assess how well it lines up with DDD. Always in this order:
 
-### 1. Contexte préalable
-- Si `docs/business/` et `docs/technical/` existent (sortie de `codebase-cartographer`), les lire
-  d'abord : glossaire = candidat Langage omniprésent, ADR = décisions de frontières déjà prises.
-- Sinon, explorer le codebase : structure des dossiers, dépendances entre couches,
-  noms des classes vs vocabulaire métier.
+### 1. Prior context
+- If `docs/business/` and `docs/technical/` exist (output of `codebase-cartographer`), read
+  them first: the glossary is a candidate ubiquitous language, the ADRs are boundary decisions
+  already taken.
+- Otherwise, explore the codebase: folder structure, dependencies between layers, class names
+  against the domain vocabulary.
 
-### 2. Détection des symptômes
-Lire `references/tactical.md` (section Symptômes) et `references/strategic.md`
-(section Symptômes). Pour chaque symptôme détecté, noter : localisation, gravité
-(bloquant / majeur / mineur), pattern DDD violé.
+### 2. Spotting the symptoms
+Read `references/tactical.md` (Symptoms section) and `references/strategic.md` (Symptoms
+section). For every symptom found, record: where it lives, how severe it is (blocking /
+major / minor), which DDD pattern it violates.
 
-Les 8 familles de symptômes à balayer systématiquement :
-1. **Modèle anémique** — entités = sacs de getters/setters, logique dans des "managers"
-2. **Couches qui fuient** — logique métier dans l'IHM, SQL dans le domaine
-3. **Agrégats absents ou obèses** — pas de racine claire, ou racine qui englobe tout
-4. **Entités/Objets-Valeurs confondus** — identité créée sans besoin, ou valeurs mutables partagées
-5. **Langage divergent** — code ≠ vocabulaire des experts métier / du glossaire
-6. **Accès aux données anarchique** — requêtes directes contournant tout Entrepôt
-7. **Contextes enchevêtrés** — un "gros modèle" unique contradictoire, termes qui se chevauchent
-8. **Cœur de domaine noyé** — la logique différenciante indiscernable du code générique
+The 8 families of symptoms to sweep through every time:
+1. **Anemic domain model** — entities are bags of getters and setters, logic sits in "managers"
+2. **Leaking layers** — domain logic in the UI, SQL in the domain
+3. **Missing or bloated aggregates** — no clear root, or a root that swallows everything
+4. **Entities and value objects confused** — identity created without need, or shared mutable values
+5. **Diverging language** — the code does not match the domain experts' or the glossary's vocabulary
+6. **Unruly data access** — direct queries bypassing every repository
+7. **Tangled contexts** — a single contradictory "big model", overlapping terms
+8. **Core domain drowned** — the differentiating logic indistinguishable from generic code
 
-### 3. Restitution
-- Synthèse courte en prose, puis tableau des constats (symptôme, localisation, gravité, pattern).
-- **Schémas** : Mermaid pour les vues structurelles (carte de contexte actuelle, dépendances
-  entre couches, frontières d'agrégats proposées) ; ASCII pour les illustrations ponctuelles
-  inline. Toujours montrer l'état ACTUEL et l'état CIBLE quand on propose un changement.
+### 3. Reporting back
+- A short prose summary, then a table of findings (symptom, location, severity, pattern).
+- **Diagrams**: Mermaid for structural views (the current context map, dependencies between
+  layers, proposed aggregate boundaries); ASCII for one-off inline illustrations. Always show
+  the CURRENT state and the TARGET state when proposing a change.
 
-### 4. Recommandations interactives
-Présenter les remédiations possibles via **QCM de priorisation** (max 5 options, gravité
-décroissante). L'utilisateur choisit ce qu'il veut approfondir ; détailler alors le plan de
-remédiation de l'option choisie, avec schéma cible.
+The report is written in the target project's language, like everything else this skill
+produces outside this repository.
 
-### 5. Persistance (QCM final obligatoire)
-Toujours terminer par un QCM (forme et mode dégradé : voir `clarify-with-choices`) :
-- **Rien** — l'audit reste conversationnel
-- **`docs/technical/ddd-audit.md`** — rapport complet daté (créer `docs/technical/` si absent ;
-  si le dossier vient du cartographer, respecter son format et référencer le rapport dans `AGENTS.md`)
-- **ADR** — un ADR par décision structurante retenue, dans `docs/technical/adr/`
+### 4. Interactive recommendations
+Offer the possible remediations as a **prioritization multiple-choice question** (5 options
+max, decreasing severity). The user picks what to dig into; only then detail the remediation
+plan for the chosen option, with a target diagram.
+
+### 5. Persistence (closing multiple-choice question, mandatory)
+Always finish with a multiple-choice question (shape and degraded mode: see
+`clarify-with-choices`):
+- **Nothing** — the audit stays conversational
+- **`docs/technical/ddd-audit.md`** — a full dated report (create `docs/technical/` if it is
+  missing; if the folder came from the cartographer, follow its format and reference the
+  report in `AGENTS.md`)
+- **ADR** — one ADR per structural decision retained, under `docs/technical/adr/`
 
 ---
 
-## Mode Guide
+## Guidance mode
 
-Accompagnement ponctuel d'une décision de conception. Charger la référence pertinente
-**avant** de répondre :
+One-off support for a design decision. Load the relevant reference **before** answering:
 
-| Question type | Référence |
+| Kind of question | Reference |
 |---|---|
-| Entité ou Objet-Valeur ? Où placer cette logique ? Frontière d'agrégat ? Fabrique ou constructeur ? | `references/tactical.md` |
-| Découper en contextes ? Intégrer deux systèmes ? Relation entre équipes ? Que distiller ? | `references/strategic.md` |
+| Entity or value object? Where does this logic go? Aggregate boundary? Factory or constructor? | `references/tactical.md` |
+| Split into contexts? Integrate two systems? Relationship between teams? What to distill? | `references/strategic.md` |
 
-Règles du mode guide :
-- Répondre par une **recommandation tranchée** + sa justification par le pattern, jamais un
-  catalogue neutre d'options.
-- Illustrer par un schéma dès que la réponse implique ≥ 3 éléments en relation
-  (ASCII si simple, Mermaid si structurel).
-- Quand la décision dépend d'un fait que seul l'utilisateur connaît (ex. : "les deux équipes
-  ont-elles le même management ?" pour Client-Fournisseur vs Conformiste), poser LA question
-  discriminante via QCM plutôt que de présenter toutes les branches.
-- Ancrer dans le concret : reformuler la question de l'utilisateur dans son domaine métier
-  à lui, pas dans des exemples génériques de banque ou d'aviation.
+Rules for guidance mode:
+- Answer with a **clear-cut recommendation** plus the pattern that justifies it, never a
+  neutral catalog of options.
+- Draw a diagram as soon as the answer involves 3 or more related elements (ASCII when simple,
+  Mermaid when structural).
+- When the decision hinges on a fact only the user knows (for instance: "do both teams report
+  to the same management?" for customer/supplier vs conformist), ask THE discriminating
+  question as a multiple-choice question rather than laying out every branch.
+- Stay concrete: restate the user's question in their own domain, not in generic banking or
+  aviation examples. Questions are asked in the target project's language.
 
 ---
 
-## Articulation avec l'écosystème
+## Fitting into the ecosystem
 
-- **codebase-cartographer** : consommer `docs/business/glossary.md` comme proxy du Langage
-  omniprésent ; un écart code ↔ glossaire est un constat d'audit en soi.
-- **plan-driven-dev** : toute remédiation retenue qui implique du code multi-fichier doit être
-  proposée comme tâche `plan-driven-dev` (ne pas implémenter directement depuis l'audit).
-- **codebase-harness** : pour chaque frontière validée (couches, contextes, agrégats), proposer
-  de la transformer en invariant exécutable (ex. : "la couche domaine n'importe ni l'IHM ni
-  l'infrastructure", "seules les racines d'agrégats ont un Entrepôt").
-- **behavior-driven-testing** : les invariants d'agrégats sont des comportements à tester en
-  priorité.
+- **codebase-cartographer**: consume `docs/business/glossary.md` as a proxy for the ubiquitous
+  language; a gap between code and glossary is an audit finding in its own right.
+- **plan-driven-dev**: any remediation retained that touches code across several files must be
+  handed over as a `plan-driven-dev` task (never implement straight from the audit).
+- **codebase-harness**: for every boundary confirmed (layers, contexts, aggregates), offer to
+  turn it into an executable invariant (for instance: "the domain layer imports neither the UI
+  nor the infrastructure", "only aggregate roots have a repository").
+- **behavior-driven-testing**: aggregate invariants are behaviors to test first.
 
-## Garde-fous
+## Guardrails
 
-- Ne pas appliquer DDD à tout : si le sous-domaine est générique ou trivial (CRUD pur),
-  le dire explicitement — c'est conforme à la doctrine (distillation, "n'essayez pas
-  d'appliquer DDD à tout").
-- Vocabulaire : utiliser les termes français du lexique d'Evans (Entrepôt, Fabrique,
-  Objet-Valeur, Contexte borné...) avec le terme anglais entre parenthèses à la première
-  occurrence.
-- Un audit ne modifie JAMAIS le code. Le mode guide non plus — il recommande.
+- Do not apply DDD to everything: when the subdomain is generic or trivial (plain CRUD), say
+  so out loud — that is the doctrine itself (distillation, "do not try to apply DDD to
+  everything").
+- Vocabulary: use the canonical DDD pattern names (repository, factory, value object, bounded
+  context...). The ubiquitous language, on the other hand, belongs to the target project's
+  domain: if that domain speaks French, its terms stay French — translating them would break
+  the very principle. Pattern names and domain words are two different things.
+- An audit NEVER modifies code. Neither does guidance mode — it recommends.

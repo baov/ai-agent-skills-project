@@ -7,23 +7,31 @@ on:
 
 jobs:
   spec:
-    name: Conformité à la spécification Agent Skills
+    name: Agent Skills specification conformance
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      # Le script n'a aucune dépendance : pas d'étape d'installation.
-      - name: Règles appliquées
+      # The script has no dependencies: no install step.
+      - name: Rules applied
         run: python3 tools/validate-skills.py --explain
-      # Code 1 = violation `error`, bloquante. Code 2 = uniquement des `warn`,
-      # signalés sans bloquer : le harness informe, il ne met pas de porte.
+      # Exit 1 = an `error` violation, blocking. Exit 2 = `warn` only, reported
+      # without blocking: the harness informs, it does not put up a gate.
       - name: Validation
         run: |
           python3 tools/validate-skills.py --root . || status=$?
           if [ "${status:-0}" = "2" ]; then
-            echo "::warning::Des recommandations du spec ne sont pas respectées (voir ci-dessus)."
+            echo "::warning::Some spec recommendations are not met (see above)."
             exit 0
           fi
           exit "${status:-0}"
+
+  language:
+    name: English, and on-glossary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Glossary check
+        run: tools/check-glossary.sh

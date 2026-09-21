@@ -1,36 +1,47 @@
 # AGENTS.md
 
-Conventions de contribution à ce dépôt. Elles s'appliquent à tout agent qui y écrit.
+Contribution conventions for this repository. They apply to every agent that writes here.
 
-Ce dépôt **produit** des skills ; il n'en consomme pas pour lui-même. Pour savoir lequel utiliser dans un projet, voir [workflows.md](workflows.md).
+This repository **produces** skills; it does not consume them for itself. To know which one to use in a project, see [workflows.md](workflows.md).
 
 ## Format
 
-Chaque skill est un dossier de `skills/` conforme à la [spécification Agent Skills](https://agentskills.io/specification) : un `SKILL.md` avec `name` et `description` en frontmatter, le détail dans `references/`.
+Every skill is a folder under `skills/` conforming to the [Agent Skills specification](https://agentskills.io/specification): a `SKILL.md` with `name` and `description` in its frontmatter, the detail in `references/`.
 
-Avant tout commit :
+Before any commit:
 
 ```bash
 python3 tools/validate-skills.py --root .
+tools/check-glossary.sh
 ```
 
-Le hook pre-commit le lance déjà (`pre-commit install`). Ce que le script vérifie, et pourquoi chaque règle existe : `python3 tools/validate-skills.py --explain`.
+The pre-commit hook already runs both (`pre-commit install`). What the validator checks, and why each rule exists: `python3 tools/validate-skills.py --explain`.
 
-## Règles d'écriture
+## Writing rules
 
-- **Langue française.** Corps, descriptions, messages d'erreur, commentaires de script.
-- **Aucun nom d'outil en dur.** Ni `mcp__*`, ni un outil de question à choix multiples, ni un chemin propre à un agent. Un skill qui nomme son outil casse chez les autres. Pour les QCM, déléguer à `clarify-with-choices`.
-- **`AGENTS.md`, jamais `CLAUDE.md`.** Quand un skill écrit dans le fichier d'instructions du projet cible, la cible est `AGENTS.md`. La compatibilité Claude Code passe par un `CLAUDE.md` d'une ligne qui importe `AGENTS.md`.
-- **« l'agent », jamais le nom d'un produit.** Le narrateur d'un skill est l'agent qui l'exécute, quel qu'il soit.
-- **Le corps d'un `SKILL.md` reste sous 500 lignes.** Il est chargé en entier dès que le skill s'active. Au-delà, déporter dans `references/` — un fichier par branche du workflow, pour que l'agent ne lise que ce qui le concerne.
-- **Une `description` est un déclencheur, pas un résumé.** C'est le seul texte chargé en permanence : il dit ce que fait le skill *et* quand l'utiliser, avec les mots que l'utilisateur emploiera. Plafond de 1024 caractères.
+- **English.** Bodies, descriptions, error messages, script comments and identifiers.
+- **The vocabulary in [`docs/glossary.md`](docs/glossary.md) is binding.** It fixes the doctrine terms so that ten skills read as one system. Using a different English word for a listed term is a defect, not a variation — `tools/check-glossary.sh` enforces it.
+- **No hardcoded tool names.** No `mcp__*`, no named multiple-choice tool, no agent-specific path. A skill that names its tool breaks on every other agent. For multiple-choice questions, defer to `clarify-with-choices`.
+- **`AGENTS.md`, never `CLAUDE.md`.** When a skill writes to the target project's instruction file, the target is `AGENTS.md`. Claude Code compatibility comes from a one-line `CLAUDE.md` that imports `AGENTS.md`.
+- **"the agent", never a product name.** A skill's narrator is whichever agent runs it.
+- **A `SKILL.md` body stays under 500 lines.** It is loaded in full the moment the skill activates. Past that, move detail into `references/` — one file per branch of the workflow, so the agent reads only what concerns it.
+- **A `description` is a trigger, not a summary.** It is the only text loaded at all times: it says what the skill does *and* when to use it, in the words the user will actually type. Capped at 1024 characters.
 
-## Doctrine commune aux skills
+## Two languages, two scopes
 
-Ces règles sont dans les skills eux-mêmes ; les rappeler ici évite qu'une contribution les contredise.
+The repository is English. What a skill *writes elsewhere* is not.
 
-- **Signalement** — le skill s'annonce avant de s'appliquer, jamais silencieusement.
-- **Validation par QCM** — les décisions structurantes passent par l'utilisateur.
-- **Persistance sur fichiers** — plans, rapports et invariants vivent dans le dépôt, pas dans le contexte.
-- **Mode dégradé explicite** — un skill fonctionne sans ses référentiels, mais le dit.
-- **Pas d'auto-fix silencieux** — le harness signale ; la correction passe par un commit visible.
+- **Repository language: English.** Everything versioned here.
+- **Output language: the target project's.** Documentation, plans, review reports, audits, and the questions a skill asks — all follow the language of the project being worked on. A skill documenting a French codebase produces French documentation, and a Domain-Driven Design skill keeps that project's ubiquitous language intact.
+
+Writing the repository in English must never push English onto the projects these skills serve.
+
+## Doctrine shared by the skills
+
+These rules live inside the skills themselves; restating them here keeps a contribution from contradicting them.
+
+- **Announcement** — a skill announces itself before applying, never silently.
+- **Validation by multiple-choice question** — structural decisions go through the user.
+- **File-backed persistence** — plans, reports and invariants live in the repository, not in the context window.
+- **Explicit degraded mode** — a skill works without its reference material, but says so.
+- **No silent auto-fix** — the harness reports; the correction goes through a visible commit.

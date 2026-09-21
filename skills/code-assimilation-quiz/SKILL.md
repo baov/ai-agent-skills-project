@@ -1,131 +1,134 @@
 ---
 name: code-assimilation-quiz
-description: Quiz d'assimilation post-implémentation — une code review pédagogique sous forme de QCM, une question à la fois, pour que le développeur s'approprie le code écrit par l'IA. À utiliser UNIQUEMENT sur demande explicite de l'utilisateur, jamais automatiquement. Déclencheurs typiques — "lance la live code review", "fais-moi un quiz sur ce qui a été implémenté", "vérifie que j'ai compris le code", "QCM sur le diff", "aide-moi à assimiler ce que tu as codé", "code review pédagogique". Ne pas confondre avec une revue de code classique (recherche de défauts) — ici l'objectif est l'apprentissage du développeur, pas la critique du code.
+description: Post-implementation assimilation quiz — a teaching code review run as multiple-choice questions, one at a time, so the developer takes ownership of the code the AI wrote. Use ONLY when the user explicitly asks for it, never automatically. Typical triggers — "run the live code review", "quiz me on what was implemented", "check that I understood the code", "multiple-choice questions on the diff", "help me assimilate what you coded", "teaching code review". Do not confuse with a standard code review (hunting for defects) — the goal here is the developer's learning, not criticism of the code.
 ---
 
-# Live Code Review — Quiz d'assimilation
+# Live Code Review — Assimilation quiz
 
-## Pourquoi ce skill existe
+## Why this skill exists
 
-Quand une IA implémente du code, le développeur risque de devenir un simple
-valideur passif : le code marche, il merge, mais il ne saurait ni le maintenir
-ni le défendre en revue. Ce skill inverse la dynamique : après une
-implémentation, le développeur passe un QCM construit sur le diff réel. Le but
-n'est pas de le piéger ni de le noter, mais de transformer une lecture passive
-en rappel actif (active recall) — la façon la plus efficace de mémoriser et de
-détecter ses propres zones floues.
+When an AI implements code, the developer risks becoming a passive rubber
+stamp: the code works, they merge it, but they could neither maintain it nor
+defend it in review. This skill flips the dynamic: after an implementation,
+the developer takes a multiple-choice quiz built on the real diff. The point
+is not to trap them or to grade them, but to turn passive reading into active
+recall — the most effective way to remember something and to spot your own
+fuzzy areas.
 
-Garde ce but en tête à chaque étape : tout ce qui humilie, piège ou noie le
-développeur est contre-productif. Tout ce qui l'amène à se reposer une vraie
-question sur le code est productif.
+Keep that goal in mind at every step: anything that humiliates, traps or
+drowns the developer is counterproductive. Anything that makes them ask
+themselves a real question about the code is productive.
 
-## Pourquoi ce skill compte davantage à mesure que les agents écrivent plus
+## Why this skill matters more as agents write more
 
-Une objection se pose naturellement : si la tendance est de déléguer
-l'implémentation aux agents et de relire de moins en moins de code, à quoi bon
-un quiz sur du code qu'on ne lira plus ? C'est l'inverse qui est vrai, et il
-vaut la peine de savoir pourquoi.
+One objection comes up naturally: if the trend is to delegate implementation
+to agents and read less and less code, what good is a quiz on code nobody
+will read? The opposite is true, and it is worth knowing why.
 
-Déléguer sans relire ne fonctionne que si des contraintes mécaniques encadrent
-l'agent : invariants d'architecture, seuils de forme, tests d'acceptation,
-mutation testing. Or **calibrer ces contraintes demande un jugement qui ne
-s'acquiert qu'en ayant lu beaucoup de code**. Savoir qu'une fonction est trop
-grosse, qu'un couplage va coûter cher, qu'un cas limite manque — cela ne
-s'apprend pas en lisant des seuils, cela s'apprend en ayant vu les dégâts.
+Delegating without reading only works if mechanical constraints hem the agent
+in: architecture invariants, shape thresholds, acceptance tests, mutation
+testing. But **calibrating those constraints takes judgment that is only
+acquired by having read a lot of code**. Knowing that a function is too big,
+that a coupling will cost you later, that an edge case is missing — none of
+that is learned from reading thresholds, it is learned from having seen the
+damage.
 
-Le raccourci qui consiste à adopter « je ne relis plus » sans avoir d'abord
-construit ce jugement produit un pari très différent, et beaucoup plus risqué,
-de celui que fait un développeur expérimenté avec la même phrase. La formule
-est la même ; ce qu'elle recouvre ne l'est pas.
+Adopting "I don't read the code anymore" as a shortcut, without having built
+that judgment first, is a very different bet, and a far riskier one, than the
+same sentence coming from an experienced developer. The wording is the same;
+what it covers is not.
 
-Ce skill est l'un des endroits où ce jugement se fabrique. Il ne sert pas à
-vérifier le code — `premerge-review` s'en charge — mais à faire que le
-développeur qui pilotera des agents demain sache ce qu'il pilote. C'est aussi
-pourquoi il reste utile quand tout est vert : un diff sans défaut est un
-excellent support d'apprentissage.
+This skill is one of the places where that judgment is forged. It is not
+there to check the code — `premerge-review` handles that — but to make sure
+the developer who will be steering agents tomorrow knows what they are
+steering. That is also why it stays useful when everything is green: a diff
+without a single defect is excellent learning material.
 
-Conséquence pratique : quand le développeur signale qu'il connaît déjà bien la
-zone touchée, le prendre au mot et réduire le quiz. Quand il découvre une
-technique, un pattern ou une partie du codebase, c'est le moment où le quiz
-rend le plus.
+Practical consequence: when the developer says they already know the area
+well, take them at their word and shorten the quiz. When they are discovering
+a technique, a pattern or a part of the codebase, that is when the quiz pays
+off most.
 
-## Étape 1 — Délimiter le périmètre
+## Step 1 — Define the scope
 
-Le quiz se base sur le **diff git**, pas sur ta mémoire de la conversation
-(elle peut diverger de ce qui est réellement sur le disque).
+The quiz is based on the **git diff**, not on your memory of the conversation
+(which can diverge from what is actually on disk).
 
-1. Regarde d'abord les changements non commités : `git status`, puis
-   `git diff` et `git diff --staged`.
-2. S'il n'y a rien de non commité, regarde les derniers commits :
-   `git log --oneline -10`, puis le diff des commits concernés.
-3. Si le périmètre est ambigu (plusieurs commits récents, mélange de sujets),
-   demande au développeur lequel couvrir avant de continuer. Une seule
-   question, avec les options identifiées.
+1. Look at uncommitted changes first: `git status`, then `git diff` and
+   `git diff --staged`.
+2. If nothing is uncommitted, look at the latest commits:
+   `git log --oneline -10`, then the diff of the commits involved.
+3. If the scope is ambiguous (several recent commits, mixed topics), ask the
+   developer which one to cover before going further. A single question, with
+   the options you identified.
 
-Lis le diff en entier, et ouvre les fichiers modifiés si le diff seul ne
-suffit pas à comprendre le contexte (signatures appelées, classes voisines).
-Tu ne peux pas écrire de bonnes questions sur du code que tu n'as pas
-réellement lu.
+Read the whole diff, and open the modified files when the diff alone is not
+enough to understand the context (signatures being called, neighboring
+classes). You cannot write good questions about code you have not actually
+read.
 
-## Étape 2 — Calibrer le quiz
+## Step 2 — Calibrate the quiz
 
-Nombre de questions, proportionnel à l'ampleur du changement :
+Number of questions, proportional to the size of the change:
 
-| Ampleur du diff | Questions |
+| Diff size | Questions |
 |---|---|
-| Petit (< ~50 lignes, 1-2 fichiers) | 3 |
-| Moyen (~50-300 lignes) | 5 |
-| Gros (> 300 lignes ou nombreux fichiers) | 7 |
+| Small (< ~50 lines, 1-2 files) | 3 |
+| Medium (~50-300 lines) | 5 |
+| Large (> 300 lines or many files) | 7 |
 
-Annonce le format au développeur avant de commencer : nombre de questions,
-et le fait qu'il y a une question à la fois.
+Announce the format to the developer before starting: how many questions,
+and the fact that they come one at a time.
 
-## Étape 3 — Construire les questions
+Ask the questions in the language the developer and the project use. This
+skill talks to a human being, and this repository being written in English
+does not make English the language of the quiz.
 
-Avant de poser la première question, construis mentalement (ou dans un bloc de
-réflexion) la liste complète des questions. Cela garantit la couverture des
-trois axes et évite la redondance.
+## Step 3 — Build the questions
 
-Les questions couvrent **trois axes**, à équilibrer sur l'ensemble du quiz :
+Before asking the first question, build the complete list of questions in
+your head (or in a reasoning block). That guarantees coverage of the three
+axes and avoids redundancy.
 
-1. **Le QUOI** — structure du changement : quels fichiers/modules sont
-   touchés, où vit telle responsabilité, quel est le flux d'appel.
-2. **Le POURQUOI** — choix de conception : pourquoi cette structure plutôt
-   qu'une alternative, quel problème ce choix évite, quel compromis il fait.
-3. **Les risques / cas limites** — qu'est-ce qui casse si on passe telle
-   entrée, quel cas n'est pas couvert, où est le point fragile.
+The questions cover **three axes**, to be balanced across the whole quiz:
 
-Règles de qualité des questions :
+1. **The WHAT** — structure of the change: which files/modules are touched,
+   where a given responsibility lives, what the call flow is.
+2. **The WHY** — design choices: why this structure rather than an
+   alternative, what problem the choice avoids, what trade-off it makes.
+3. **Risks / edge cases** — what breaks if you pass a given input, which case
+   is not covered, where the fragile spot is.
 
-- **Ancrées dans le diff réel.** Chaque question doit citer son ancrage
-  (fichier, fonction, voire ligne). Pas de question de culture générale qu'on
-  pourrait répondre sans avoir vu le code.
-- **4 options (A-D), une seule correcte.** Les distracteurs doivent être
-  *plausibles* — typiquement les alternatives de conception réellement
-  envisageables, ou des confusions probables. Un distracteur absurde est une
-  option offerte gratuitement.
-- **Pas de pièges de formulation.** La difficulté doit venir de la
-  compréhension du code, jamais d'une subtilité de phrasé ou d'un détail
-  mémoriel insignifiant (ordre exact des paramètres, nom précis d'une
-  variable locale).
-- **Le POURQUOI prime quand il faut choisir.** Si le quota de questions force
-  un arbitrage, privilégie les questions de conception et de risque : ce sont
-  elles qui rendent le développeur capable de maintenir le code.
+Quality rules for the questions:
 
-## Étape 4 — Dérouler le quiz, une question à la fois
+- **Anchored in the real diff.** Every question must cite its anchor (file,
+  function, even line). No general-knowledge question that could be answered
+  without having seen the code.
+- **4 options (A-D), exactly one correct.** The distractors must be
+  *plausible* — typically the design alternatives genuinely on the table, or
+  the likely confusions. An absurd distractor is an option handed over for
+  free.
+- **No trick wording.** The difficulty must come from understanding the
+  code, never from a subtlety of phrasing or an insignificant memory detail
+  (exact order of the parameters, precise name of a local variable).
+- **The WHY wins when you have to choose.** If the question quota forces a
+  trade-off, favor design and risk questions: those are the ones that make
+  the developer able to maintain the code.
 
-C'est la règle cardinale du skill : **une seule question par message, puis
-attendre la réponse**. Ne jamais lister plusieurs questions d'avance, ne
-jamais enchaîner sans réponse. Le rappel actif ne fonctionne que si le
-développeur s'engage sur une réponse avant de voir la correction.
+## Step 4 — Run the quiz, one question at a time
 
-Format de présentation : l'énoncé, puis les options en **liste à puces**
-(une par ligne, plus lisible qu'un paragraphe) :
+This is the cardinal rule of the skill: **one question per message, then wait
+for the answer**. Never list several questions ahead of time, never move on
+without an answer. Active recall only works if the developer commits to an
+answer before seeing the correction.
+
+Presentation format: the question, then the options as a **bullet list** (one
+per line, more readable than a paragraph):
 
 ```
-Question 2/5 — [axe : pourquoi]
-Dans `OrderService.cancel()`, le remboursement est délégué à un événement
-asynchrone plutôt qu'appelé directement. Pourquoi ?
+Question 2/5 — [axis: why]
+In `OrderService.cancel()`, the refund is delegated to an asynchronous event
+rather than called directly. Why?
 
 - **A.** ...
 - **B.** ...
@@ -133,54 +136,54 @@ asynchrone plutôt qu'appelé directement. Pourquoi ?
 - **D.** ...
 ```
 
-Le développeur répond par la lettre. N'utilise un mécanisme de choix
-interactif (boutons, widget de sélection) **que s'il peut afficher
-l'énoncé complet ET ses quatre options au même endroit**. Un widget qui ne
-montre que des boutons A/B/C/D séparés de l'énoncé fait répondre le
-développeur à l'aveugle — dans ce cas, le texte simple est meilleur.
+The developer answers with the letter. Only use an interactive choice
+mechanism (buttons, selection widget) **if it can display the full question
+AND its four options in the same place**. A widget that shows nothing but
+A/B/C/D buttons detached from the question makes the developer answer blind —
+in that case, plain text is better.
 
-**Après une bonne réponse** : confirme brièvement, et ajoute en une ou deux
-phrases le *pourquoi* de la bonne réponse (la confirmation seule n'apprend
-rien). Puis question suivante.
+**After a correct answer**: confirm briefly, and add in one or two sentences
+the *why* of the right answer (confirmation on its own teaches nothing). Then
+the next question.
 
-**Après une mauvaise réponse** :
+**After a wrong answer**:
 
-1. Donne la bonne réponse avec une explication pédagogique, en pointant
-   l'endroit exact du code (`fichier:fonction`) pour que le développeur
-   puisse aller voir.
-2. **Note la notion ratée.** Plus tard dans le quiz (pas immédiatement —
-   laisse au moins une question d'écart), repose une question **reformulée**
-   sur la même notion : autre angle, autre formulation, autres options. Une
-   re-question est un nouveau test de la notion, pas la même question
-   recyclée — sinon tu testes la mémoire à court terme, pas la compréhension.
-3. Les re-questions s'ajoutent au quota initial (un quiz à 5 questions avec 2
-   erreurs peut monter à 7). Annonce-le naturellement ("on y reviendra").
+1. Give the right answer with a teaching explanation, pointing at the exact
+   spot in the code (`file:function`) so that the developer can go and look.
+2. **Note the notion that was missed.** Later in the quiz (not right away —
+   leave at least one question in between), ask a **reworded** question on
+   the same notion: different angle, different wording, different options. A
+   re-question is a fresh test of the notion, not the same question recycled
+   — otherwise you are testing short-term memory, not understanding.
+3. Re-questions add to the initial quota (a 5-question quiz with 2 mistakes
+   can grow to 7). Mention it naturally ("we'll come back to this").
 
-Ton à tenir : bienveillant et factuel. Une erreur du développeur est une
-information utile (zone floue détectée), jamais un échec. Pas de
-condescendance, pas de félicitations excessives non plus.
+Tone to hold: supportive and factual. A mistake from the developer is useful
+information (a fuzzy area detected), never a failure. No condescension, and
+no excessive praise either.
 
-## Étape 5 — Restitution finale
+## Step 5 — Final wrap-up
 
-À la fin du quiz, en conversation (pas de fichier à produire) :
+At the end of the quiz, in conversation (no file to produce):
 
-1. **Score** : x/n au premier essai, et le résultat des re-questions.
-2. **Synthèse par zones** :
-   - *Maîtrisé* — les notions répondues correctement du premier coup.
-   - *À revoir* — les notions ratées, même rattrapées en re-question, chacune
-     avec le pointeur code (`fichier:fonction`) pour une relecture ciblée.
-3. **Suggestion de suite** si pertinente : par exemple "relis le bloc
-   try/except de `retry.py` en te demandant ce qui se passe si X" — une
-   consigne de lecture active vaut mieux qu'un "relis le fichier".
+1. **Score**: x/n on the first try, plus the result of the re-questions.
+2. **Breakdown by area**:
+   - *Solid* — the notions answered correctly the first time.
+   - *To revisit* — the notions that were missed, even the ones recovered on
+     a re-question, each with its code pointer (`file:function`) for targeted
+     rereading.
+3. **A suggested next step** when relevant: for example "reread the
+   try/except block in `retry.py` and ask yourself what happens if X" — an
+   active reading instruction beats "reread the file".
 
-Ne transforme pas la synthèse en rapport bureaucratique : quelques phrases
-par zone suffisent.
+Do not turn the wrap-up into a bureaucratic report: a few sentences per area
+are enough.
 
-## Ce que ce skill ne fait pas
+## What this skill does not do
 
-- Il ne critique pas le code et ne propose pas de refactoring — ce n'est pas
-  une revue de qualité. Si tu repères un vrai problème dans le diff en
-  préparant les questions, signale-le *après* le quiz, séparément.
-- Il ne se déclenche jamais de lui-même. Même en fin d'implémentation, tu
-  peux au plus *mentionner* que le skill existe si le contexte s'y prête,
-  jamais lancer le quiz sans demande.
+- It does not criticize the code and does not propose refactorings — it is
+  not a quality review. If you spot a genuine problem in the diff while
+  preparing the questions, raise it *after* the quiz, separately.
+- It never triggers on its own. Even at the end of an implementation, you
+  may at most *mention* that the skill exists if the context lends itself to
+  it, never start the quiz without being asked.

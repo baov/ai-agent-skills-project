@@ -1,110 +1,114 @@
-# Brique A — Invariants exécutables
+# Block A — Executable invariants
 
-Chargé par `codebase-harness` uniquement si cette brique a été retenue au QCM de scoping (étape 2). Les autres briques sont dans les fichiers `brique-*.md` voisins.
+Loaded by `codebase-harness` only if this block was retained in the scoping multiple-choice question (step 2). The other blocks live in the neighbouring `block-*.md` files.
 
 ---
 
-## 3.1 — Extraction des règles candidates
+## 3.1 — Extracting the candidate rules
 
-L'agent relit (s'ils existent) :
-- `docs/technical/architecture.md` section « Contraintes structurelles »
-- Tous les ADR `docs/technical/adr/*.md` — en particulier la section « Décision »
-- `README.md` racine pour des indices de conventions (« no direct DB calls in handlers », etc.)
+The agent re-reads (where they exist):
+- `docs/technical/architecture.md`, section "Structural constraints"
+- Every ADR under `docs/technical/adr/*.md` — the "Decision" section above all
+- The root `README.md`, for hints of conventions ("no direct DB calls in handlers", and the like)
 
-Si la doc cartographer n'a pas tourné, l'agent demande directement à l'utilisateur :
+If the cartographer documentation never ran, the agent asks the user directly:
 
-> « Quelles règles de code/architecture aimerais-tu rendre testables ? Exemples : couches isolées, interdiction d'imports d'I/O dans une couche, conventions de nommage de fichiers, types de retour obligatoires sur les fonctions publiques, etc. »
+> "Which code or architecture rules would you like to make testable? For instance: isolated layers, a ban on I/O imports inside a layer, file naming conventions, mandatory return types on public functions, and so on."
 
-## 3.1 bis — Les seuils de forme sont des invariants comme les autres
+The question is asked in the target project's language, like everything this block writes into that project.
 
-Aux règles issues des ADR, ajouter systématiquement une famille de candidats souvent oubliée parce qu'elle passe pour cosmétique : **taille de fonction, taille de fichier, complexité cyclomatique, profondeur d'imbrication, nombre de paramètres**.
+## 3.1 bis — Shape thresholds are invariants like any other
 
-La justification n'est pas esthétique, et il faut la formuler comme telle à l'utilisateur : **le code emmêlé dégrade la productivité des agents**. Un agent qui retravaille une fonction de 300 lignes à complexité élevée y fait des passes répétées, produit des diffs larges, casse des choses adjacentes, et échoue parfois à démêler ses propres nœuds — l'humain doit alors reprendre la main, ce qui annule le gain de la délégation. Contraindre la forme en amont coûte moins cher que de démêler en aval.
+On top of the rules drawn from the ADRs, always add one family of candidates that gets forgotten because it passes for cosmetic: **function size, file size, cyclomatic complexity, nesting depth, number of parameters**.
 
-C'est un argument mesurable, pas un principe : si l'utilisateur doute, proposer de démarrer en `warn` et d'observer sur deux semaines la corrélation entre violations et tours d'agent nécessaires.
+The justification is not aesthetic, and it has to be put to the user as such: **tangled code degrades agent productivity**. An agent reworking a 300-line function with high complexity makes repeated passes at it, produces wide diffs, breaks adjacent things, and sometimes fails to untangle its own knots — a human then has to take over, which cancels out the gain of delegating. Constraining shape up front is cheaper than untangling downstream.
 
-Seuils de départ raisonnables, à ajuster au projet plutôt qu'à imposer :
+That is a measurable argument, not a principle: if the user is doubtful, offer to start in `warn` and to watch, over two weeks, the correlation between violations and the number of agent turns needed.
 
-| Métrique | Seuil `warn` | Outil typique |
+Reasonable starting thresholds, to be tuned to the project rather than imposed:
+
+| Metric | `warn` threshold | Typical tool |
 |----------|--------------|---------------|
-| Lignes par fonction | 40 | Checkstyle/Detekt (JVM), ESLint `max-lines-per-function` (JS/TS) |
-| Complexité cyclomatique | 10 | PMD/Detekt, ESLint `complexity` |
-| Profondeur d'imbrication | 4 | Detekt, ESLint `max-depth` |
-| Paramètres par fonction | 5 | Detekt, ESLint `max-params` |
+| Lines per function | 40 | Checkstyle/Detekt (JVM), ESLint `max-lines-per-function` (JS/TS) |
+| Cyclomatic complexity | 10 | PMD/Detekt, ESLint `complexity` |
+| Nesting depth | 4 | Detekt, ESLint `max-depth` |
+| Parameters per function | 5 | Detekt, ESLint `max-params` |
 
-Ne pas réinventer ces checks : quand le linter standard de la stack sait déjà le faire, l'invariant consiste à **activer et configurer la règle existante**, et `invariants.md` documente le seuil et sa raison d'être. N'écrire un script custom dans `tools/harness/` que si aucun outil de la stack ne couvre la règle.
+Do not reinvent these checks: when the stack's standard linter already knows how to do it, the invariant amounts to **turning on and configuring the existing rule**, and `invariants.md` documents the threshold and why it is there. Write a custom script in `tools/harness/` only when no tool in the stack covers the rule.
 
 ## 3.1 ter — Consolidation
 
-L'agent consolide une liste de **règles candidates** (5-15 max), avec pour chacune :
-- Énoncé en une phrase
-- Source (ADR-XXXX, section d'architecture.md, ou « énoncé par l'utilisateur »)
-- Mécanisme de check proposé (AST Python, ESLint custom, ArchUnit, dependency-cruiser, test custom)
-- Estimation de complexité (faible / moyenne / forte)
+The agent consolidates a list of **candidate rules** (5-15 max), each one carrying:
+- A one-sentence statement
+- Its source (ADR-XXXX, a section of architecture.md, or "stated by the user")
+- The proposed check mechanism (Python AST, custom ESLint, ArchUnit, dependency-cruiser, custom test)
+- A complexity estimate (low / medium / high)
 
-## 3.2 — QCM de sélection
+## 3.2 — Selection multiple-choice question
 
 ```
-J'ai extrait N règles candidates :
+I extracted N candidate rules:
 
-INV-CANDIDATE-1 : "La couche `src/domaine/` n'importe aucun module d'I/O"
-    Source : ADR-0003 (architecture hexagonale)
-    Check proposé : AST Python custom (faible complexité)
+INV-CANDIDATE-1: "The `src/domain/` layer imports no I/O module"
+    Source: ADR-0003 (hexagonal architecture)
+    Proposed check: custom Python AST (low complexity)
 
-INV-CANDIDATE-2 : "Tout endpoint REST a un schéma de réponse Pydantic"
-    Source : architecture.md section "Contraintes structurelles"
-    Check proposé : AST Python custom (moyenne)
+INV-CANDIDATE-2: "Every REST endpoint has a Pydantic response schema"
+    Source: architecture.md, "Structural constraints" section
+    Proposed check: custom Python AST (medium)
 
-INV-CANDIDATE-3 : "Pas de TODO dans le code main"
-    Source : convention équipe (énoncé utilisateur)
-    Check proposé : grep + regex (faible)
+INV-CANDIDATE-3: "No TODO in main code"
+    Source: team convention (stated by the user)
+    Proposed check: grep + regex (low)
 
 ...
 ```
 
-QCM : « Lesquelles veux-tu rendre exécutables ? ». Options : tout / sélection / aucune.
+Multiple-choice question: "Which ones do you want to make executable?". Options: all / a selection / none. The wording reaches the user in the target project's language; the example above is written in English only because this file is.
 
-Pour chaque règle validée, second QCM : « Sévérité ? `error` (CI bloquante) ou `warn` (signal seulement) ? ». Recommandation par défaut : démarrer en `warn` pendant 1-2 semaines, puis passer en `error` quand les violations existantes sont à zéro.
+For each validated rule, a second multiple-choice question: "Severity? `error` (blocking CI) or `warn` (signal only)?". Default recommendation: start in `warn` for one or two weeks, then move to `error` once existing violations are down to zero.
 
-## 3.3 — Production des artefacts
+## 3.3 — Producing the artifacts
 
-Pour chaque invariant validé, l'agent produit :
+For each validated invariant, the agent produces:
 
-**a) Une entrée dans `docs/technical/invariants.md`** suivant le template (voir `references/templates.md` section 1) :
-- ID `INV-NNN` (numérotation immuable, jamais re-numérotée)
-- Statut `actif`
-- Énoncé, source, lien vers le script, sévérité, remédiation actionnable, exemple de violation et de correctif
+**a) An entry in `docs/technical/invariants.md`** following the template (see `references/templates.md` section 1):
+- An `INV-NNN` id (immutable numbering, never renumbered)
+- Status `active`
+- Statement, source, link to the script, severity, actionable remediation, an example violation and its fix
 
-**b) Un script de check dans `tools/harness/check_<sujet>.{py,js,kt,go}`** suivant les conventions :
-- Sortie format `path:line: [INV-NNN] message — remédiation`
-- Mode `--explain` qui décrit la règle sans rien vérifier
-- Mode `--root <chemin>` pour pouvoir tester localement
-- Code de sortie : 0 OK, 1 violation `error`, 2 violations `warn`
-- Voir `references/harness-starters/README.md` pour le contrat que tout script doit respecter, et `references/templates.md` § 6 pour les conventions de message
+This file is documentation of the target project: it is written in that project's language, not necessarily in English.
 
-**c) Une remontée vers les ADR concernés** : si la règle vient d'un ADR, l'agent propose d'ajouter dans l'ADR le champ « Invariants exécutables associés : INV-NNN ». Toujours via QCM avant modification.
+**b) A check script in `tools/harness/check_<subject>.{py,js,kt,go}`** following the conventions:
+- Output format `path:line: [INV-NNN] message — remediation`
+- An `--explain` mode that describes the rule without checking anything
+- A `--root <path>` mode so it can be tested locally
+- Exit codes: 0 OK, 1 `error` violation, 2 `warn` violations
+- See `references/harness-starters/README.md` for the contract every script has to honor, and `references/templates.md` § 6 for message conventions
 
-## 3.4 — Proposition d'intégration
+**c) A feedback loop into the ADRs concerned**: if the rule comes from an ADR, the agent offers to add an "Associated executable invariants: INV-NNN" field to that ADR. Always through a multiple-choice question before any change.
 
-L'agent présente à l'utilisateur le snippet à ajouter à pre-commit / CI, et demande explicitement la permission de l'écrire :
+## 3.4 — Integration proposal
+
+The agent shows the user the snippet to add to pre-commit / CI, and asks explicitly for permission to write it:
 
 ```yaml
-# Exemple pre-commit
+# pre-commit example
 - id: harness-invariants
-  name: Harness — vérification des invariants
+  name: Harness — invariant check
   entry: python tools/harness/check_layer_isolation.py
   language: system
   pass_filenames: false
 ```
 
 ```yaml
-# Exemple GitHub Actions
+# GitHub Actions example
 - name: Harness checks
   run: |
     python tools/harness/check_layer_isolation.py
     python tools/harness/check_api_typing.py
 ```
 
-Le skill ne modifie pas ces fichiers sans validation. Si l'utilisateur dit non, les scripts existent quand même dans `tools/harness/` — il peut les lancer à la main.
+The skill does not touch these files without validation. If the user says no, the scripts exist in `tools/harness/` all the same — they can be run by hand.
 
 ---

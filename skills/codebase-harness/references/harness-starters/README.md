@@ -1,29 +1,29 @@
-# Starters de scripts harness
+# Harness script starters
 
-Ce dossier contient des implémentations de référence des scripts que le skill génère. **Ce sont des exemples, pas une bibliothèque.** Le skill génère toujours le script adapté à la stack détectée ; ces fichiers servent à montrer le contrat en action et à éviter de le réinventer.
+This folder holds reference implementations of the scripts the skill generates. **They are examples, not a library.** The skill always generates the script that fits the detected stack; these files are here to show the contract in action and to save it from being reinvented.
 
-**En cas de divergence, le contrat prime sur le starter.** Un starter qui s'écarterait des conventions de `templates.md` § 6 est à corriger, pas à imiter.
+**Where they diverge, the contract wins over the starter.** A starter drifting from the conventions of `templates.md` § 6 is to be fixed, not imitated.
 
-## Contenu
+## Contents
 
-| Fichier | Brique | Portée |
+| File | Block | Reach |
 |---------|--------|--------|
-| `check_test_coverage.py` | B | Générique — ne lit que du markdown et des chemins, fonctionne quelle que soit la stack du projet |
+| `check_test_coverage.py` | B | Generic — reads nothing but markdown and paths, works whatever the project's stack |
 
-## Ce que ce dossier ne contient volontairement pas
+## What this folder deliberately does not hold
 
-**Des linters par stack (brique A).** Un check d'isolation de couche s'écrit en ArchUnit sur JVM, en dependency-cruiser sur JS/TS, en AST sur Python — trois implémentations sans code commun. Les figer ici produirait un dossier qui vieillit plus vite que les stacks. Le skill les génère à partir des conventions de `templates.md` § 6.
+**Per-stack linters (block A).** A layer isolation check is written in ArchUnit on the JVM, in dependency-cruiser on JS/TS, in AST on Python — three implementations with no code in common. Freezing them here would produce a folder that ages faster than the stacks do. The skill generates them from the conventions of `templates.md` § 6.
 
-**Des configs de mutation (brique D).** Voir SKILL.md § 5.3.a : le cahier des charges en cinq points est la source de vérité, l'outillage est détecté au run.
+**Mutation configs (block D).** See SKILL.md § 5.3.a: the five-point specification is the source of truth, the tooling is detected at run time.
 
-Si tu figes ici un starter éprouvé en interne, ajoute-le au tableau ci-dessus et note la stack visée. Un starter non documenté est un starter que personne ne réutilisera.
+If you freeze a starter here that has proven itself internally, add it to the table above and note the stack it targets. An undocumented starter is a starter nobody will reuse.
 
-## Le contrat, en résumé
+## The contract, in short
 
-Tout script de `tools/harness/`, quelle que soit la brique :
+Every script in `tools/harness/`, whatever the block:
 
-- accepte `--explain` (décrit sans vérifier) et `--root <chemin>`
-- écrit une ligne par violation : `path:line: [INV-NNN] message — remédiation`
-- sort `0` (OK), `1` (violation `error`), `2` (violations `warn` uniquement)
-- ne corrige rien, ne modifie ni sa config ni son seuil
-- n'exige aucune installation de dépendance pour les vérifications documentaires
+- accepts `--explain` (describes without checking) and `--root <path>`
+- writes one line per violation: `path:line: [INV-NNN] message — remediation`
+- exits `0` (OK), `1` (`error` violation), `2` (`warn` violations only)
+- fixes nothing, changes neither its config nor its threshold
+- requires no dependency to be installed for the documentation checks

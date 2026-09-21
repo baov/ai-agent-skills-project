@@ -1,287 +1,291 @@
 ---
 name: plan-driven-dev
-description: Workflow discipliné pour implémenter une nouvelle fonctionnalité OU corriger un bug dans un projet de code existant. Force une phase de compréhension du contexte avant toute écriture, produit un plan persistant validé étape par étape, applique un TDD orienté comportement, et capitalise les leçons apprises. Utilise cette skill systématiquement dès qu'un prompt utilisateur ressemble à une tâche de code dans un projet existant (mots-clés type "implémente", "ajoute", "corrige", "fix", "bug", "feature", "refactor", "modifie", "il faut que", ou toute demande de modification de code multi-fichier). La skill commence par se signaler et demander validation avant de s'appliquer — ne pas l'invoquer silencieusement. Charge les invariants du harness du projet à l'étape contexte et les vérifie dans la boucle TDD, pour qu'aucune violation ne soit découverte à la revue.
+description: Disciplined workflow for implementing a new feature OR fixing a bug in an existing code project. Forces a context-gathering phase before anything is written, produces a persistent plan validated step by step, applies behavior-driven TDD, and captures lessons learned. Use this skill whenever a user prompt looks like a code task in an existing project (keywords such as "implement", "add", "fix", "bug", "feature", "refactor", "change", "it should", or any multi-file code change request). The skill starts with an announcement and asks for validation before it applies — never invoke it silently. It loads the project's harness invariants at the context step and checks them inside the TDD loop, so that no violation is discovered at review time.
 ---
 
 # plan-driven-dev
 
-Workflow discipliné qui force l'agent à comprendre avant de coder, planifier avant d'agir, et capitaliser après avoir fini. Le **plan** est un fichier persistant sur disque (`.plans/in-progress/<slug>.md`) qui sert de boussole tout au long de la tâche.
+A disciplined workflow that forces the agent to understand before coding, to plan before acting, and to capture lessons once it is done. The **plan** is a file persisted on disk (`.plans/in-progress/<slug>.md`) that acts as a compass for the whole task.
 
 ---
 
-## Étape 0 — Signalement et validation
+## Step 0 — Announcement and validation
 
-Dès que tu identifies une tâche qui ressemble à une feature ou un bug, **arrête-toi avant d'agir** et propose la skill :
+As soon as you identify a task that looks like a feature or a bug, **stop before acting** and offer the skill:
 
-> *« Cette tâche ressemble à une feature/un bug à implémenter dans le projet. Je peux appliquer le workflow `plan-driven-dev` (compréhension du contexte → plan validé → TDD → review). Tu veux qu'on le suive ?»*
+> *"This task looks like a feature/bug to implement in the project. I can apply the `plan-driven-dev` workflow (context gathering → validated plan → TDD → review). Do you want to follow it?"*
 
-- Si **non** → code en mode normal, n'applique pas la suite.
-- Si **oui** → continue avec l'étape 1.
+- If **no** → code in normal mode, do not apply what follows.
+- If **yes** → move on to step 1.
 
-Ne saute jamais cette étape de validation, même si l'utilisateur semble pressé.
+Never skip this validation step, even if the user seems in a hurry.
 
----
-
-## Étape 1 — Comprendre le contexte
-
-Toujours dans cet ordre :
-
-1. **Vue d'ensemble du projet**
-   - Lire `README.md` (et `CONTRIBUTING.md` si présent)
-   - Inspecter l'arborescence du projet (au moins 2 niveaux)
-   - Identifier le langage, le framework, l'outil de test, le linter/typecheck
-   - Repérer les conventions visibles (organisation des dossiers, naming, style)
-
-2. **Fichiers directement concernés + dépendances immédiates**
-   - Lire les fichiers que la tâche touche évidemment
-   - Suivre les imports/exports pour comprendre les couplages
-
-3. **Usages du symbole/fonction à modifier**
-   - Faire un `grep` ou recherche d'usages avant toute modification
-   - Comprendre l'impact potentiel des changements
-
-4. **Couche d'enforcement, si le projet en a une**
-   - Lire la section « Harness » d'`AGENTS.md` et `docs/technical/invariants.md`
-   - Inventorier les scripts disponibles dans `tools/harness/` et savoir lequel couvre quoi
-   - Retenir les invariants qui s'appliquent aux fichiers que la tâche va toucher — ce sont des contraintes de conception, pas des vérifications de fin de course
-   - Reporter ces invariants dans la section 3 (Contexte) du plan, avec leur ID. Un plan qui ignore un invariant applicable produira du code qui échouera au gauntlet.
-
-   Si le projet n'a pas de harness, passer — sans le signaler, ce n'est pas le sujet de la tâche en cours.
-
-**En parallèle de tout ce qui précède** : lire `.plans/FEEDBACK.md` s'il existe. Ce fichier contient les leçons accumulées des tâches précédentes (conventions du projet, pièges déjà rencontrés, principes durables). **Appliquer ces leçons** dans tout ce qui suit.
-
-Si `.plans/` n'existe pas encore, crée le dossier maintenant (avec ses sous-dossiers `in-progress/`, `done/`, `aborted/`).
+All the questions the skill asks, and everything it writes to disk, are in the language of the target project — not necessarily the language of this file.
 
 ---
 
-## Étape 2 — Reformulation de l'objectif → VALIDATION
+## Step 1 — Understand the context
 
-Reformule l'objectif avec tes propres mots, en 2-3 phrases. Présente-la à l'utilisateur et **attends une validation explicite** avant de continuer.
+Always in this order:
 
-Exemple : *« Si je comprends bien : tu veux X parce que Y, et le résultat attendu est Z. Tu valides ? »*
+1. **Project overview**
+   - Read `README.md` (and `CONTRIBUTING.md` if present)
+   - Inspect the project tree (at least 2 levels deep)
+   - Identify the language, the framework, the test runner, the linter/typechecker
+   - Spot the visible conventions (folder layout, naming, style)
 
-Si l'utilisateur corrige → reformule à nouveau jusqu'à validation.
+2. **Files directly involved + immediate dependencies**
+   - Read the files the task obviously touches
+   - Follow imports/exports to understand the coupling
+
+3. **Usages of the symbol/function to modify**
+   - Run a `grep` or a usage search before changing anything
+   - Understand the potential impact of the changes
+
+4. **Enforcement layer, if the project has one**
+   - Read the "Harness" section of `AGENTS.md` and `docs/technical/invariants.md`
+   - Inventory the scripts available in `tools/harness/` and know which one covers what
+   - Note the invariants that apply to the files the task is going to touch — these are design constraints, not end-of-the-line checks
+   - Carry those invariants into section 3 (Context) of the plan, with their ID. A plan that ignores an applicable invariant will produce code that fails the gauntlet.
+
+   If the project has no harness, skip this — without mentioning it, it is not the subject of the task at hand.
+
+**In parallel with all of the above**: read `.plans/FEEDBACK.md` if it exists. That file holds the lessons accumulated from previous tasks (project conventions, traps already hit, durable principles). **Apply those lessons** in everything that follows.
+
+If `.plans/` does not exist yet, create the folder now (along with its `in-progress/`, `done/` and `aborted/` subfolders).
 
 ---
 
-## Étape 3 — Plan → VALIDATION
+## Step 2 — Restate the goal → VALIDATION
 
-Crée le fichier `.plans/in-progress/<slug>.md` (slug = identifiant court en kebab-case dérivé de la tâche, ex: `add-user-export`, `fix-login-timeout`).
+Restate the goal in your own words, in 2-3 sentences. Present it to the user and **wait for explicit validation** before continuing.
 
-**Le fichier doit contenir EXACTEMENT ces 10 sections, dans cet ordre :**
+Example: *"If I understand correctly: you want X because Y, and the expected outcome is Z. Does that work?"*
+
+If the user corrects you → restate again until validated.
+
+---
+
+## Step 3 — Plan → VALIDATION
+
+Create the file `.plans/in-progress/<slug>.md` (slug = short kebab-case identifier derived from the task, e.g. `add-user-export`, `fix-login-timeout`).
+
+**The file must contain EXACTLY these 10 sections, in this order:**
 
 ```markdown
-# <Titre de la tâche>
+# <Task title>
 
-## 1. Métadonnées
+## 1. Metadata
 - **Type**: feature | bug
 - **Date**: YYYY-MM-DD
-- **Statut**: in-progress
+- **Status**: in-progress
 
-## 2. Objectif
-<reformulation validée à l'étape 2>
+## 2. Goal
+<the restatement validated at step 2>
 
-## 3. Contexte
-<résumé des découvertes faites à l'étape 1 : fichiers clés, conventions, contraintes>
+## 3. Context
+<summary of what step 1 uncovered: key files, conventions, constraints>
 
-## 4. Comportements attendus
-<liste à puces des comportements à tester — épine dorsale du TDD>
-<format par comportement : étant donné <contexte>, quand <action>, alors <résultat observable> — **frontière de test** : <cas d'usage / port / API de module par lequel le test passe>>
-- Nominal : ...
-- Edge case 1 : ...
-- Edge case 2 : ...
+## 4. Expected behaviors
+<bullet list of the behaviors to test — the backbone of the TDD loop>
+<format per behavior: given <context>, when <action>, then <observable outcome> — **test boundary**: <use case / port / module API the test goes through>>
+- Nominal: ...
+- Edge case 1: ...
+- Edge case 2: ...
 
-## 5. Étapes
-<checklist ordonnée des actions de code>
-- [ ] Étape 1 : ...
-- [ ] Étape 2 : ...
+## 5. Steps
+<ordered checklist of the coding actions>
+- [ ] Step 1: ...
+- [ ] Step 2: ...
 
-## 6. Risques & edge cases
-<zones sensibles, ce qui pourrait casser, dépendances cachées>
+## 6. Risks & edge cases
+<sensitive areas, what could break, hidden dependencies>
 
-## 7. Hors scope
-<ce qu'on ne fait PAS — anti-dérive>
+## 7. Out of scope
+<what we are NOT doing — the anti-drift section>
 
-## 8. Déviations
-<vide pour l'instant — journal à remplir si on s'écarte du plan>
+## 8. Deviations
+<empty for now — a log to fill in if we depart from the plan>
 
-## 9. Auto-review
-<vide pour l'instant — rempli à la clôture>
+## 9. Self-review
+<empty for now — filled in at closing>
 
-## 10. Actions de suivi
-<vide pour l'instant — rempli à la clôture>
+## 10. Follow-up actions
+<empty for now — filled in at closing>
 ```
 
-Une fois le fichier rédigé, présente-le à l'utilisateur et **attends validation**. S'il demande des modifications, mets à jour le fichier puis redemande validation.
+The section titles above are the skeleton; the plan's prose is written in the language of the target project.
+
+Once the file is written, present it to the user and **wait for validation**. If they ask for changes, update the file and ask for validation again.
 
 ---
 
-## Étape 4 — Risques & edge cases → VALIDATION
+## Step 4 — Risks & edge cases → VALIDATION
 
-Tu as déjà rempli la section 6 dans le plan. À cette étape, **prends un moment dédié** pour la passer en revue avec l'utilisateur :
+You have already filled in section 6 of the plan. At this step, **take a dedicated moment** to go through it with the user:
 
-> *« Voici les risques et edge cases que j'ai identifiés [...]. Tu vois quelque chose à ajouter ou à enlever ? »*
+> *"Here are the risks and edge cases I identified [...]. Anything you would add or drop?"*
 
-Si l'utilisateur ajoute des éléments → mettre à jour la section 6 ET potentiellement la section 4 (comportements attendus) du plan.
+If the user adds items → update section 6 AND possibly section 4 (expected behaviors) of the plan.
 
-Attends validation explicite avant de passer à l'écriture du code.
+Wait for explicit validation before moving on to writing code.
 
 ---
 
-## Étape 4.5 — Check "plan prêt à dérouler" → décision modèle
+## Step 4.5 — "Plan ready to run" check → model decision
 
-Le plan vient d'être validé (étapes 3 et 4). Avant de basculer en mode exécution, **évalue objectivement si le plan est assez explicite pour être déroulé mécaniquement**, sans nouvel arbitrage de fond.
+The plan has just been validated (steps 3 and 4). Before switching to execution mode, **assess objectively whether the plan is explicit enough to be run mechanically**, with no further judgment calls on substance.
 
-Passe la section 5 (Étapes) et la section 4 (Comportements attendus) au crible de ces critères déterministes :
+Run section 5 (Steps) and section 4 (Expected behaviors) through these deterministic criteria:
 
-- [ ] Chaque étape nomme les fichiers ou symboles touchés (pas de « adapter le service concerné » sans dire lequel)
-- [ ] Chaque étape a un verbe d'action concret (« créer », « renommer », « ajouter le champ X »), pas un verbe vague (« gérer », « traiter », « voir selon »)
-- [ ] Chaque comportement attendu a un critère de validation observable (un test possible, pas « ça doit bien marcher »)
-- [ ] Chaque comportement attendu indique sa frontière de test (cas d'usage, port, API de module — pas « à voir » ni une classe interne par défaut)
-- [ ] Aucune étape ne contient de TODO, « à définir », « à voir », « selon le cas »
-- [ ] Les dépendances entre étapes sont claires (ordre explicite, pas de « en parallèle ou pas, à voir »)
+- [ ] Every step names the files or symbols it touches (no "adapt the relevant service" without saying which one)
+- [ ] Every step has a concrete action verb ("create", "rename", "add field X"), not a vague one ("handle", "process", "depending")
+- [ ] Every expected behavior has an observable acceptance criterion (a test you could write, not "it should work fine")
+- [ ] Every expected behavior states its test boundary (use case, port, module API — not "to be decided", and not an internal class by default)
+- [ ] No step contains a TODO, "to be defined", "to be decided", "case by case"
+- [ ] Dependencies between steps are clear (explicit ordering, no "in parallel or not, we will see")
 
-**Si tous les critères sont cochés** → le plan est déroulable mécaniquement. Continue vers l'étape 5 sans rien dire de plus à l'utilisateur.
+**If every criterion is checked** → the plan can be run mechanically. Move on to step 5 without saying anything more to the user.
 
-**Si au moins un critère échoue** → STOP. Présente le constat à l'utilisateur :
+**If at least one criterion fails** → STOP. Lay out the finding for the user:
 
-> *« Le plan est validé sur le fond, mais en le relisant pour l'exécution, je repère [N] zones qui demanderaient un arbitrage en cours de route : [liste les critères échoués avec l'extrait concerné].*
+> *"The plan is validated on substance, but rereading it for execution I spot [N] areas that would need a judgment call along the way: [list the failed criteria with the relevant excerpt].*
 >
-> *Deux options :*
-> *(a) **Raffiner le plan ici** jusqu'à ce qu'il soit déroulable mécaniquement (je peux le faire maintenant si tu es sur un modèle fort type Opus).*
-> *(b) **Basculer sur un modèle fort pour l'exécution** si tu es actuellement sur un modèle plus léger (Sonnet/Haiku) : ouvre un nouveau chat sur Opus, je reprendrai à l'étape 5 avec le plan existant dans `.plans/in-progress/<slug>.md`.*
+> *Two options:*
+> *(a) **Refine the plan here** until it can be run mechanically (I can do it now if you are on a strong model such as Opus).*
+> *(b) **Switch to a strong model for execution** if you are currently on a lighter one (Sonnet/Haiku): open a new chat on Opus, and I will pick up at step 5 with the existing plan in `.plans/in-progress/<slug>.md`.*
 >
-> *Que préfères-tu ?»*
+> *Which do you prefer?"*
 
-Note importante : un agent ne peut pas changer de modèle lui-même. C'est à l'utilisateur d'ouvrir une nouvelle session avec le modèle adéquat. Le plan sur disque est précisément là pour que la bascule soit sans couture.
-
----
-
-## Étape 5 — Implémentation en TDD hybride
-
-Approche **TDD orienté comportement** (les tests testent ce que le code fait, pas comment — ils doivent survivre à un refactoring).
-
-**Avant d'écrire le premier test, lis le skill `behavior-driven-testing` et applique sa doctrine** (frontière de test, nommage, assertions, usage des mocks). Les frontières de test sont déjà fixées par comportement dans la section 4 du plan — écris chaque test à la frontière indiquée, pas classe par classe.
-
-Déroulé :
-
-1. **Les comportements attendus sont déjà listés** dans la section 4 du plan (fait à l'étape 3).
-
-2. **Pour le comportement nominal en premier** :
-   - Écrire le test (qui doit échouer — *red*)
-   - Vérifier qu'il échoue effectivement (`npm test`, `pytest`, etc.)
-   - Implémenter le minimum nécessaire pour le faire passer (*green*)
-   - Vérifier que le test passe
-   - Refactorer si nécessaire en gardant le test vert
-
-3. **Puis chaque edge case, un par un** :
-   - Test (red) → implémentation (green) → refactor
-   - Ne passer au suivant que quand le précédent est vert
-
-4. **À chaque passage au vert, lancer les invariants qui couvrent les fichiers touchés** (les scripts repérés à l'étape 1) avant de passer au comportement suivant.
-
-### Un invariant violé est un test rouge
-
-Traiter une violation d'invariant exactement comme un test qui échoue : on ne continue pas, on corrige avant d'avancer. La raison est de coût, pas de discipline — une violation détectée deux comportements plus tôt se corrige en modifiant du code qu'on a encore en tête ; découverte à la revue, elle se corrige sur un diff figé, et impose de refaire toute la relecture.
-
-Le message d'erreur du linter contient la remédiation ; la lire avant de chercher ailleurs. Si la remédiation est inapplicable ou si l'invariant paraît inadapté au cas, **c'est une déviation** au sens de la règle ci-dessous : arrêt, documentation en section 8, validation. Ne jamais contourner un invariant en silence, ni ajouter une exclusion sans validation.
-
-**Le mutation testing ne va pas dans cette boucle.** Son coût d'exécution est incompatible avec un cycle rouge-vert-refactor ; il a sa place au gauntlet et en CI, pas ici.
-
-À chaque étape terminée du plan (section 5), **cocher la case `[x]`** dans le fichier et donner un **résumé court** (1-2 phrases) à l'utilisateur, puis enchaîner sans demander de validation.
-
-### ⚠️ Règle de déviation — ARRÊT OBLIGATOIRE
-
-**Dès que tu t'écartes du plan**, tu t'arrêtes immédiatement et tu demandes validation à l'utilisateur. Cas concrets :
-
-- Un comportement attendu non prévu émerge (ex: « ah, il faut aussi gérer le cas non-connecté »)
-- Une étape du plan se révèle infaisable telle qu'écrite
-- Tu dois toucher un fichier non identifié dans la phase de contexte
-- Tu modifies l'approche technique prévue
-- Tout autre écart visible par rapport au plan
-
-À chaque déviation :
-1. Documente-la dans la section 8 (Déviations) du plan : *« [date/étape] — Déviation : ... Raison : ... Décision prise : ... »*
-2. Présente la déviation à l'utilisateur et demande validation
-3. Mets à jour le plan si nécessaire (sections 5, 6, ou autres)
-4. Ne reprends qu'après validation
+Important note: an agent cannot switch models by itself. It is up to the user to open a new session with the right model. The plan on disk exists precisely to make that switch seamless.
 
 ---
 
-## Étape 6 — Clôture
+## Step 5 — Implementation with hybrid TDD
 
-Une fois toutes les étapes de la section 5 cochées :
+A **behavior-driven TDD** approach (tests exercise what the code does, not how — they must survive a refactoring).
 
-1. **Vérifier la complétude du plan**
-   - Toutes les cases `[x]` ? Si une étape n'a pas été suivie correctement → l'expliquer dans la section 8 (Déviations).
+**Before writing the first test, read the `behavior-driven-testing` skill and apply its doctrine** (test boundary, naming, assertions, use of mocks). The test boundaries are already fixed per behavior in section 4 of the plan — write each test at the stated boundary, not class by class.
 
-2. **Lancer la suite complète, puis le gauntlet**
-   - Tests du projet entier (`npm test`, `pytest`, `cargo test`, etc.)
+How it goes:
+
+1. **The expected behaviors are already listed** in section 4 of the plan (done at step 3).
+
+2. **Nominal behavior first**:
+   - Write the test (it must fail — *red*)
+   - Check that it does fail (`npm test`, `pytest`, etc.)
+   - Implement the minimum needed to make it pass (*green*)
+   - Check that the test passes
+   - Refactor if needed, keeping the test green
+
+3. **Then each edge case, one at a time**:
+   - Test (red) → implementation (green) → refactor
+   - Only move to the next one once the previous one is green
+
+4. **On every move to green, run the invariants that cover the files you touched** (the scripts spotted at step 1) before moving to the next behavior.
+
+### A violated invariant is a failing test
+
+Treat an invariant violation exactly like a failing test: you do not carry on, you fix it before moving forward. The reason is cost, not discipline — a violation caught two behaviors earlier is fixed in code you still have in mind; discovered at review time, it is fixed on a frozen diff, and forces the whole read-through to start over.
+
+The linter's error message contains the remediation; read it before looking elsewhere. If the remediation does not apply, or if the invariant looks ill-suited to the case, **that is a deviation** in the sense of the rule below: stop, document in section 8, ask for validation. Never bypass an invariant silently, and never add an exclusion without validation.
+
+**Mutation testing does not belong in this loop.** Its runtime cost is incompatible with a red-green-refactor cycle; its place is the gauntlet and CI, not here.
+
+At every completed step of the plan (section 5), **tick the `[x]` box** in the file and give the user a **short summary** (1-2 sentences), then carry on without asking for validation.
+
+### ⚠️ Deviation rule — MANDATORY STOP
+
+**The moment you depart from the plan**, you stop immediately and ask the user for validation. Concrete cases:
+
+- An unforeseen expected behavior emerges (e.g. "ah, we also need to handle the logged-out case")
+- A step of the plan turns out to be unworkable as written
+- You have to touch a file that was not identified during the context phase
+- You change the planned technical approach
+- Any other visible departure from the plan
+
+For each deviation:
+1. Document it in section 8 (Deviations) of the plan: *"[date/step] — Deviation: ... Reason: ... Decision taken: ..."*
+2. Present the deviation to the user and ask for validation
+3. Update the plan if needed (sections 5, 6, or others)
+4. Do not resume until validated
+
+---
+
+## Step 6 — Closing
+
+Once every step of section 5 is ticked:
+
+1. **Check that the plan is complete**
+   - All boxes `[x]`? If a step was not followed properly → explain it in section 8 (Deviations).
+
+2. **Run the full suite, then the gauntlet**
+   - The whole project's tests (`npm test`, `pytest`, `cargo test`, etc.)
    - Linter (`eslint`, `ruff`, etc.)
    - Typecheck (`tsc --noEmit`, `mypy`, etc.)
-   - Si le projet a un harness : **tous** les invariants (`bash tools/harness/run_all.sh`), pas seulement ceux touchés par la tâche — une modification peut faire échouer une règle sur un fichier qu'on croyait hors périmètre — puis le pont test-cases (`check_test_coverage.*`)
-   - Tout doit passer. Si échec → revenir en arrière et corriger.
+   - If the project has a harness: **all** the invariants (`bash tools/harness/run_all.sh`), not just the ones the task touched — a change can break a rule on a file everyone thought was out of scope — then the test-case bridge (`check_test_coverage.*`)
+   - Everything must pass. On failure → go back and fix.
 
-   C'est exactement ce que `premerge-review` rejouera en phase 3. Le passer ici signifie qu'aucune revue ne sera arrêtée par un check que la tâche pouvait résoudre elle-même.
+   This is exactly what `premerge-review` will replay in phase 3. Passing it here means no review will be stopped by a check the task could have resolved itself.
 
-3. **Auto-review du diff**
-   - Faire un `git diff` (ou équivalent) et le lire activement
-   - Passer les tests ajoutés au crible des « signaux de mauvaise direction » du skill `behavior-driven-testing` (tests reflétant l'implémentation, mocks omniprésents, test sans comportement clair à protéger…) — reformuler ou supprimer les tests concernés avant de poursuivre
-   - Remplir la section 9 du plan avec :
-     - Zones risquées du diff (logique complexe, état partagé, sécurité…)
-     - Dette ajoutée (TODO, hacks, raccourcis assumés)
-     - Points qui méritent une seconde paire d'yeux
-   - Présenter cette auto-review à l'utilisateur
+3. **Self-review of the diff**
+   - Run a `git diff` (or equivalent) and read it actively
+   - Run the tests you added through the "wrong direction signals" of the `behavior-driven-testing` skill (tests mirroring the implementation, mocks everywhere, a test with no clear behavior to protect...) — rewrite or delete the tests concerned before going further
+   - Fill in section 9 of the plan with:
+     - Risky areas of the diff (complex logic, shared state, security...)
+     - Debt added (TODOs, hacks, shortcuts taken knowingly)
+     - Points that deserve a second pair of eyes
+   - Present this self-review to the user
 
-4. **Proposer des actions de suivi**
-   - Remplir la section 10 du plan :
-     - Refactos différés à prévoir
-     - Tickets à créer
-     - Docs à mettre à jour
-     - Tests additionnels qu'on a choisi de ne pas écrire mais qui seraient pertinents
-   - Présenter ces propositions à l'utilisateur
+4. **Propose follow-up actions**
+   - Fill in section 10 of the plan:
+     - Deferred refactorings to schedule
+     - Tickets to open
+     - Docs to update
+     - Additional tests we chose not to write but that would be relevant
+   - Present these proposals to the user
 
-5. **Demander systématiquement** : *« Des leçons à capitaliser dans `.plans/FEEDBACK.md` pour s'améliorer en continu sur ce projet ? »*
-   - Cette question est posée **à chaque fois**, même si tout s'est bien passé.
-   - Les leçons doivent être **fil rouge** (principes durables réutilisables), pas spécifiques à la tâche.
-     - ✅ Bon : *« Dans ce projet, les tests vont à côté des sources et non dans `__tests__/`. »*
-     - ✅ Bon : *« Toujours lancer `pnpm typecheck` avant de proposer un commit. »*
-     - ❌ Mauvais : *« On a corrigé un bug de timeout sur la page de login. »* (trop spécifique)
-   - Si l'utilisateur propose des leçons → mettre à jour `.plans/FEEDBACK.md` (créer le fichier s'il n'existe pas, sinon append en respectant la structure existante).
-   - Si l'utilisateur répond non → noter simplement *« Aucune leçon ajoutée »* en section 9 du plan.
+5. **Always ask**: *"Any lessons to capture in `.plans/FEEDBACK.md` so we keep improving on this project?"*
+   - This question is asked **every single time**, even when everything went well.
+   - Lessons must be **long-running** (durable, reusable principles), not specific to the task.
+     - ✅ Good: *"In this project, tests sit next to the sources, not in `__tests__/`."*
+     - ✅ Good: *"Always run `pnpm typecheck` before proposing a commit."*
+     - ❌ Bad: *"We fixed a timeout bug on the login page."* (too specific)
+   - If the user offers lessons → update `.plans/FEEDBACK.md` (create the file if it does not exist, otherwise append, following the existing structure). Write them in the language of the target project.
+   - If the user says no → simply note *"No lesson added"* in section 9 of the plan.
 
-6. **Validation finale et déplacement du plan**
-   - Mettre à jour le statut en section 1 : `done` ou `aborted`
-   - Sur validation finale de l'utilisateur :
-     - Si tâche menée à terme → déplacer le fichier vers `.plans/done/<slug>.md`
-     - Si abandonnée → déplacer vers `.plans/aborted/<slug>.md`
-   - Confirmer à l'utilisateur : *« Plan archivé dans `.plans/done/<slug>.md`. »*
+6. **Final validation and moving the plan**
+   - Update the status in section 1: `done` or `aborted`
+   - Once the user gives final validation:
+     - If the task was carried through → move the file to `.plans/done/<slug>.md`
+     - If it was abandoned → move it to `.plans/aborted/<slug>.md`
+   - Confirm to the user: *"Plan archived in `.plans/done/<slug>.md`."*
 
 ---
 
-## Récapitulatif des points de validation
+## Validation checkpoints at a glance
 
 | # | Moment | Type |
 |---|--------|------|
-| 0 | Application de la skill | Validation **explicite** avant de continuer |
-| 2 | Reformulation de l'objectif | Validation **explicite** |
-| 3 | Plan complet | Validation **explicite** |
-| 4 | Risques & edge cases | Validation **explicite** |
-| 4.5 | Check "plan prêt à dérouler" | **Silencieux si OK, arrêt + décision si KO** |
-| 5 | Étapes intermédiaires | **Pas de validation**, résumé court suffit |
-| 5 | Invariant du harness violé | **Corriger avant d'avancer** ; si la remédiation est inapplicable → déviation |
-| 5 | Déviation détectée | **Arrêt immédiat + validation** |
-| 6 | Clôture (review, suivi, leçons, archivage) | Validation **explicite** finale |
+| 0 | Applying the skill | **Explicit** validation before continuing |
+| 2 | Restating the goal | **Explicit** validation |
+| 3 | Complete plan | **Explicit** validation |
+| 4 | Risks & edge cases | **Explicit** validation |
+| 4.5 | "Plan ready to run" check | **Silent if OK, stop + decision if KO** |
+| 5 | Intermediate steps | **No validation**, a short summary is enough |
+| 5 | Harness invariant violated | **Fix before moving forward**; if the remediation does not apply → deviation |
+| 5 | Deviation detected | **Immediate stop + validation** |
+| 6 | Closing (review, follow-up, lessons, archiving) | Final **explicit** validation |
 
 ---
 
-## Notes pour bien utiliser cette skill
+## Notes on using this skill well
 
-- **Le plan est sacré** : il sert d'ancre pour éviter la dérive. Si tu t'éloignes du plan, soit tu le mets à jour avec validation, soit tu ne le fais pas.
-- **Le plan est le pont entre modèles** : il est conçu pour qu'une session Opus de planification puisse être reprise par une session Sonnet d'exécution. L'étape 4.5 est le garde-fou qui empêche cette bascule quand le plan n'est pas assez explicite.
-- **Le harness contraint la conception, pas seulement le résultat** : les invariants sont chargés à l'étape 1 et vérifiés dans la boucle TDD, pas découverts à la clôture. Un plan écrit en ignorant un invariant applicable est un plan à refaire.
-- **Dépendance assumée** : cette skill s'appuie sur `behavior-driven-testing` pour la doctrine de test (étapes 5 et 6). Les frontières de test inscrites dans la section 4 du plan permettent toutefois à une session d'exécution de tester au bon endroit même si ce skill n'est pas chargé.
-- **Les tests sont des spécifications** : les tests de comportement encodent les attentes. Ils doivent être lisibles comme une documentation.
-- **L'auto-review est honnête** : si tu as pris un raccourci ou laissé de la dette, dis-le. La section 9 du plan est faite pour ça.
-- **Le FEEDBACK.md est cumulatif** : il grossit avec le temps. Si une leçon devient obsolète, propose de la retirer plutôt que d'empiler.
-- **Pas d'allègement automatique** : si la tâche est trop petite pour ce workflow, l'utilisateur le dira au moment du signalement (étape 0). Ne décide jamais de skip des étapes de toi-même.
+- **The plan is sacred**: it is the anchor that prevents drift. If you move away from the plan, either you update it with validation, or you do not do it.
+- **The plan is the bridge between models**: it is designed so that an Opus planning session can be picked up by a Sonnet execution session. Step 4.5 is the guardrail that blocks that handover when the plan is not explicit enough.
+- **The harness constrains the design, not just the result**: invariants are loaded at step 1 and checked inside the TDD loop, not discovered at closing. A plan written while ignoring an applicable invariant is a plan to redo.
+- **An acknowledged dependency**: this skill relies on `behavior-driven-testing` for its test doctrine (steps 5 and 6). The test boundaries recorded in section 4 of the plan do, however, let an execution session test in the right place even when that skill is not loaded.
+- **Tests are specifications**: behavior tests encode the expectations. They must read like documentation.
+- **The self-review is honest**: if you took a shortcut or left debt behind, say so. Section 9 of the plan is there for that.
+- **FEEDBACK.md is cumulative**: it grows over time. If a lesson becomes obsolete, offer to remove it rather than piling on.
+- **No automatic trimming**: if the task is too small for this workflow, the user will say so at the announcement (step 0). Never decide to skip steps on your own.

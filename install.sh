@@ -1,79 +1,79 @@
 #!/usr/bin/env bash
 #
-# Installe les skills de ce dépôt là où les agents vont les chercher.
+# Installs this repository's skills where agents look for them.
 #
-#   ./install.sh                          # portée utilisateur, tous les clients détectés
-#   ./install.sh --scope project --into ~/projets/mon-app
+#   ./install.sh                          # user scope, every detected client
+#   ./install.sh --scope project --into ~/projects/my-app
 #   ./install.sh --client claude --copy
 #
-# Par défaut, des liens symboliques : les mises à jour du dépôt sont prises en
-# compte sans réinstaller. `--copy` produit des copies indépendantes.
+# Symlinks by default: repository updates are picked up without reinstalling.
+# `--copy` produces independent copies.
 set -euo pipefail
 
 SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/skills"
 SCOPE="user"
 CLIENT="auto"
-CIBLE=""
+TARGET=""
 MODE="symlink"
 
 usage() {
   cat <<'USAGE'
-Usage : ./install.sh [options]
+Usage: ./install.sh [options]
 
-  --scope user|project   Portée. `user` installe pour toi sur cette machine ;
-                         `project` installe dans un dépôt précis (défaut : user).
-  --into <chemin>        Racine du projet. Requis avec --scope project.
-  --client <nom>         agents | claude | all (défaut : auto — voir ci-dessous).
-  --copy                 Copier au lieu de créer des liens symboliques.
-  -h, --help             Cette aide.
+  --scope user|project   Scope. `user` installs for you on this machine;
+                         `project` installs into one repository (default: user).
+  --into <path>          Project root. Required with --scope project.
+  --client <name>        agents | claude | all (default: auto — see below).
+  --copy                 Copy instead of creating symlinks.
+  -h, --help             This help.
 
-Répertoires visés :
+Target directories:
 
-  agents   ~/.agents/skills/        ou  <projet>/.agents/skills/
-           Répertoire interopérable, lu par Codex, Cursor, Gemini CLI,
-           Copilot et les autres clients conformes à la spécification.
-  claude   ~/.claude/skills/        ou  <projet>/.claude/skills/
-           Claude Code, qui a conservé son propre répertoire.
+  agents   ~/.agents/skills/        or  <project>/.agents/skills/
+           The interoperable directory, read by Codex, Cursor, Gemini CLI,
+           Copilot and other clients conforming to the specification.
+  claude   ~/.claude/skills/        or  <project>/.claude/skills/
+           Claude Code, which kept its own directory.
 
-`auto` installe pour les clients dont le répertoire parent existe déjà, et
-retombe sur `agents` si aucun n'est détecté.
+`auto` installs for the clients whose parent directory already exists, and
+falls back to `agents` if none is detected.
 USAGE
 }
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --scope)  SCOPE="${2:?--scope attend une valeur}"; shift 2 ;;
-    --into)   CIBLE="${2:?--into attend un chemin}"; shift 2 ;;
-    --client) CLIENT="${2:?--client attend une valeur}"; shift 2 ;;
+    --scope)  SCOPE="${2:?--scope expects a value}"; shift 2 ;;
+    --into)   TARGET="${2:?--into expects a path}"; shift 2 ;;
+    --client) CLIENT="${2:?--client expects a value}"; shift 2 ;;
     --copy)   MODE="copy"; shift ;;
     -h|--help) usage; exit 0 ;;
-    *) echo "Option inconnue : $1" >&2; usage >&2; exit 1 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
   esac
 done
 
-[ -d "$SOURCE" ] || { echo "Dossier skills/ introuvable à côté du script." >&2; exit 1; }
+[ -d "$SOURCE" ] || { echo "No skills/ folder next to the script." >&2; exit 1; }
 
 case "$SCOPE" in
-  user)    RACINE="$HOME" ;;
+  user)    ROOT="$HOME" ;;
   project)
-    [ -n "$CIBLE" ] || { echo "--scope project exige --into <chemin>." >&2; exit 1; }
-    [ -d "$CIBLE" ] || { echo "Projet introuvable : $CIBLE" >&2; exit 1; }
-    RACINE="$(cd "$CIBLE" && pwd)" ;;
-  *) echo "--scope attend 'user' ou 'project'." >&2; exit 1 ;;
+    [ -n "$TARGET" ] || { echo "--scope project requires --into <path>." >&2; exit 1; }
+    [ -d "$TARGET" ] || { echo "Project not found: $TARGET" >&2; exit 1; }
+    ROOT="$(cd "$TARGET" && pwd)" ;;
+  *) echo "--scope expects 'user' or 'project'." >&2; exit 1 ;;
 esac
 
-# Détection : on ne crée pas un répertoire client que l'utilisateur n'utilise pas.
+# Detection: we never create a client directory the user does not use.
 DESTINATIONS=()
 case "$CLIENT" in
-  agents) DESTINATIONS=("$RACINE/.agents/skills") ;;
-  claude) DESTINATIONS=("$RACINE/.claude/skills") ;;
-  all)    DESTINATIONS=("$RACINE/.agents/skills" "$RACINE/.claude/skills") ;;
+  agents) DESTINATIONS=("$ROOT/.agents/skills") ;;
+  claude) DESTINATIONS=("$ROOT/.claude/skills") ;;
+  all)    DESTINATIONS=("$ROOT/.agents/skills" "$ROOT/.claude/skills") ;;
   auto)
-    [ -d "$RACINE/.agents" ] && DESTINATIONS+=("$RACINE/.agents/skills")
-    [ -d "$RACINE/.claude" ] && DESTINATIONS+=("$RACINE/.claude/skills")
-    [ ${#DESTINATIONS[@]} -eq 0 ] && DESTINATIONS=("$RACINE/.agents/skills")
+    [ -d "$ROOT/.agents" ] && DESTINATIONS+=("$ROOT/.agents/skills")
+    [ -d "$ROOT/.claude" ] && DESTINATIONS+=("$ROOT/.claude/skills")
+    [ ${#DESTINATIONS[@]} -eq 0 ] && DESTINATIONS=("$ROOT/.agents/skills")
     ;;
-  *) echo "--client attend 'agents', 'claude', 'all' ou 'auto'." >&2; exit 1 ;;
+  *) echo "--client expects 'agents', 'claude', 'all' or 'auto'." >&2; exit 1 ;;
 esac
 
 echo "Source      : $SOURCE"
@@ -83,26 +83,37 @@ echo
 
 for destination in "${DESTINATIONS[@]}"; do
   mkdir -p "$destination"
-  for skill in "$SOURCE"/*/; do
-    nom="$(basename "$skill")"
-    lien="$destination/$nom"
 
-    # Un skill préexistant qui n'est pas à nous : on ne l'écrase jamais en silence.
-    if [ -e "$lien" ] && [ ! -L "$lien" ]; then
-      echo "  ~ $nom déjà présent dans $destination (copie, pas un lien) — ignoré"
+  # A renamed or removed skill leaves a dangling symlink behind. We only clear
+  # links that point into this repository — someone else's skills are theirs.
+  for link in "$destination"/*; do
+    [ -L "$link" ] || continue
+    [ -e "$link" ] && continue
+    case "$(readlink "$link")" in
+      "$SOURCE"/*) rm -f "$link"; echo "  - $(basename "$link") (dangling link removed)" ;;
+    esac
+  done
+
+  for skill in "$SOURCE"/*/; do
+    name="$(basename "$skill")"
+    link="$destination/$name"
+
+    # A pre-existing skill that is not ours: never overwritten silently.
+    if [ -e "$link" ] && [ ! -L "$link" ]; then
+      echo "  ~ $name already in $destination (a copy, not a link) — skipped"
       continue
     fi
 
-    rm -f "$lien"
+    rm -f "$link"
     if [ "$MODE" = "symlink" ]; then
-      ln -s "${skill%/}" "$lien"
+      ln -s "${skill%/}" "$link"
     else
-      cp -R "${skill%/}" "$lien"
+      cp -R "${skill%/}" "$link"
     fi
-    echo "  + $nom"
+    echo "  + $name"
   done
 done
 
 echo
-echo "Terminé. Vérification :"
+echo "Done. To verify:"
 echo "    python3 tools/validate-skills.py --root ."

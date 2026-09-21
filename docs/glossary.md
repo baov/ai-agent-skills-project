@@ -45,6 +45,15 @@ tools/check-glossary.sh
 | doc-gardening | doc-gardening | Unchanged |
 | revue pré-merge | pre-merge review | |
 | auto-fix silencieux | silent auto-fix | |
+| axe (de revue) | angle | The four review angles, not "axis" |
+| criticite | criticality | critique/standard/faible -> critical/standard/low |
+| chantier (Mikado) | worksite | |
+| derive | drift | |
+| frontiere de test | test boundary | |
+| cadrage | framing | "scope" is reserved for perimetre |
+| bloquant / majeur / mineur | blocking / major / minor | Finding severities |
+| priorite: critique (front-matter) | priority: critical | Enum: critical / important / nice-to-have |
+| type: erreur (front-matter) | type: error | Enum: nominal / error / edge-case |
 
 ## Renamed paths
 
@@ -59,6 +68,12 @@ tools/check-glossary.sh
 | `ddd-advisor/references/tactique.md` | `references/tactical.md` |
 | `docs/metier/` (produced) | `docs/business/` |
 | `docs/technique/` (produced) | `docs/technical/` |
+
+## Spelling
+
+American spelling throughout: behavior, prioritize, modeling, analyze, honor.
+The skill identifier `behavior-driven-testing` settles it for the whole
+repository.
 
 ## Two languages, two scopes
 
